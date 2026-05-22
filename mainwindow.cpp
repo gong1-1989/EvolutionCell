@@ -17,4 +17,3 @@ void MainWindow::on_btn_start_clicked()
 {
     m_game->show();
 }
-

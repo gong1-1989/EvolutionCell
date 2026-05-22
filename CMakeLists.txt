@@ -23,20 +23,16 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(EvolutionCell
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-
-
-
-
-
-
         src/gamemain.h src/gamemain.cpp
         Res.qrc
-
         src/Core/gameloop.h src/Core/gameloop.cpp
         src/Cell/cellentity.h src/Cell/cellentity.cpp
         src/Cell/gentcell.h src/Cell/gentcell.cpp
         src/Cell/monsterentity.h src/Cell/monsterentity.cpp
         src/Utils/collisionutil.h src/Utils/collisionutil.cpp
+        src/Utils/levelsystem.h src/Utils/levelsystem.cpp
+        src/Utils/MathAToB.h
+
 
     )
 # Define target properties for Android with Qt 6 as:

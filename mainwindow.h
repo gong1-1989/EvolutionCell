@@ -22,6 +22,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    GameMain* m_game;
+    GameMain *m_game;
 };
 #endif // MAINWINDOW_H

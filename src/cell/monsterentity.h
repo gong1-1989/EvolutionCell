@@ -6,7 +6,8 @@ class MonsterEntity:public Cellentity
 {
 public:
     MonsterEntity();
-    int m_hp;
+    int m_expDrop;
+    int checkDead(QList<MonsterEntity>& monList);
 };
 
 #endif // MONSTERENTITY_H
