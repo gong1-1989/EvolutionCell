@@ -1,0 +1,12 @@
+{
+    "unlock_condition":{
+        "range_extend":8,
+        "speed_up":10,
+        "grow_boost":6
+    },
+    "gene_ratio":{
+        "range":1.25,
+        "speed":1.15,
+        "grow":1.2
+    }
+}

@@ -2,4 +2,9 @@
     <qresource prefix="/Sprite">
         <file>Res/Sprite/cell.png</file>
     </qresource>
+    <qresource prefix="/Config">
+        <file>Res/Config/game_config.json</file>
+        <file>Res/Config/gene_config.json</file>
+        <file>Res/Config/monster_config.json</file>
+    </qresource>
 </RCC>

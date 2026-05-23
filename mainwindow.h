@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "src/gamemain.h"
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -18,10 +17,26 @@ public:
     ~MainWindow() override;
 
 private slots:
-    void on_btn_start_clicked();
+
+    void on_btnStartGame_clicked();
+
+    void on_btnLoadGame_clicked();
+
+    void on_btnBook_clicked();
+
+    void on_btnSetting_clicked();
+
+    void on_btnExit_clicked();
+
+    void on_btnBackHome_clicked();
+
+    void on_btnEvolveNormal_clicked();
+
+    void on_btnEvolveEndless_clicked();
+
+    void on_btnTrail_clicked();
 
 private:
     Ui::MainWindow *ui;
-    GameMain *m_game;
 };
 #endif // MAINWINDOW_H

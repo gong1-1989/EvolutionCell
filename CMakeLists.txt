@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Core Gui)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Core Gui)
-
+include_directories(${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
@@ -23,17 +23,18 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(EvolutionCell
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        src/gamemain.h src/gamemain.cpp
         Res.qrc
-        src/Core/gameloop.h src/Core/gameloop.cpp
-        src/Cell/cellentity.h src/Cell/cellentity.cpp
-        src/Cell/gentcell.h src/Cell/gentcell.cpp
-        src/Cell/monsterentity.h src/Cell/monsterentity.cpp
         src/Utils/collisionutil.h src/Utils/collisionutil.cpp
-        src/Utils/levelsystem.h src/Utils/levelsystem.cpp
         src/Utils/MathAToB.h
-
-
+        src/Utils/gamecanvas.h src/Utils/gamecanvas.cpp
+        src/Core/gameglobal.h src/Core/gameglobal.cpp
+        src/Utils/randomutil.h src/Utils/randomutil.cpp
+        src/Cell/playercell.h src/Cell/playercell.cpp
+        src/Cell/monstercell.h src/Cell/monstercell.cpp
+        src/Core/gamemanager.h src/Core/gamemanager.cpp
+        src/Core/gamerender.h src/Core/gamerender.cpp
+        src/Cell/gene.h src/Cell/gene.cpp
+        src/Utils/configreader.h src/Utils/configreader.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET EvolutionCell APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

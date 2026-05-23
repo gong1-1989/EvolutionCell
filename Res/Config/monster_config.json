@@ -1,0 +1,18 @@
+{
+    "normal":{
+        "size_min":8,
+        "size_max":16,
+        "speed_range":1.5,
+        "probability":70
+    },
+    "elite":{
+        "size_min":18,
+        "size_max":24,
+        "speed_mult":0.7,
+        "probability":20
+    },
+    "special":{
+        "speed_mult":1.3,
+        "probability":10
+    }
+}

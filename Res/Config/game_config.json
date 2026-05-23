@@ -1,0 +1,17 @@
+{
+    "player_base":{
+        "move_speed":3.0,
+        "init_size":21,
+        "max_size":80,
+        "grow_ratio":4
+    },
+    "buff_setting":{
+        "speed_buff_mult":1.5,
+        "buff_duration_ms":3000,
+        "debuff_mult":0.7
+    },
+    "scene_setting":{
+        "max_mnster_count":15,
+        "bound_offset":30
+    }
+}
