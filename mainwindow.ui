@@ -36,7 +36,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="BookPage">
        <property name="sizePolicy">
@@ -80,7 +80,72 @@
         </property>
        </widget>
       </widget>
-      <widget class="QWidget" name="LoadPage"/>
+      <widget class="QWidget" name="LoadPage">
+       <widget class="QTableWidget" name="tableSaveList">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>761</width>
+          <height>531</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="contextMenuPolicy">
+         <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
+        </property>
+        <row>
+         <property name="text">
+          <string>新建行</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>新建行</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>新建行</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>新建行</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>新建行</string>
+         </property>
+        </row>
+        <column>
+         <property name="text">
+          <string>存档槽位</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>存档时间</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>吞噬总数</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>细胞体型</string>
+         </property>
+        </column>
+       </widget>
+      </widget>
       <widget class="QWidget" name="HomePage">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">

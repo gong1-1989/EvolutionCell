@@ -3,7 +3,7 @@
 //全局常量
 #include <QtMath>
 #include <QColor>
-#include "../Utils/configreader.h"
+#include "Utils/configreader.h"
 namespace GameGlobal {
 //=====全局数值读取接口====
 //玩家配置

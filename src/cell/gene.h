@@ -2,7 +2,7 @@
 #define GENE_H
 //基因实体模块
 #include <QString>
-#include "../Core/gameglobal.h"
+#include "Core/gameglobal.h"
 class Gene
 {
 public:

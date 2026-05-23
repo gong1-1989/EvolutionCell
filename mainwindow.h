@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTableWidgetItem>
+#include <QMenu>
+#include "Utils/savemanager.h"
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -36,7 +39,16 @@ private slots:
 
     void on_btnTrail_clicked();
 
+    void deleteSelectedSave();
+
+    void on_tableSaveList_cellDoubleClicked(int row, int column);
+    void showSaveRightMenu(const QPoint& pos);
+    void refreshSaveTable();
+
 private:
     Ui::MainWindow *ui;
+    QMenu *m_rightMenu;
+    int m_currSelectSlot;
+    bool hasAnyValidSave();
 };
 #endif // MAINWINDOW_H

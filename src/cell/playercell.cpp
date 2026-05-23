@@ -1,5 +1,5 @@
 #include "playercell.h"
-#include "../Utils/randomutil.h"
+#include "Utils/randomutil.h"
 PlayerCell::PlayerCell()
     :m_x(0),m_y(0)
     ,m_size(GameGlobal::getPlayerInitSize())

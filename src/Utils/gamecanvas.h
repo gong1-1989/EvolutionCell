@@ -5,13 +5,15 @@
 #include <QPaintEvent>
 #include <QTimer>
 #include <QKeyEvent>
-#include "../Core/gamemanager.h"
+#include "Core/gamemanager.h"
 
 class GameCanvas : public QWidget
 {
     Q_OBJECT
 public:
     explicit GameCanvas(QWidget *parent = nullptr);
+    void reserGameCanvas();
+    void loadGameBySlot(int slot);
 protected:
     void paintEvent(QPaintEvent *e)override;
     void keyPressEvent(QKeyEvent *e)override;

@@ -25,6 +25,18 @@ void GameCanvas::updateCellPos(){
     m_gameMgr.frameUpdate(k_w,k_a,k_s,k_d,width(),height());
     update();
 }
+
+void GameCanvas::reserGameCanvas(){
+    m_gameMgr.reserNewGame();
+    isinitializd=false;
+    update();
+}
+void GameCanvas::loadGameBySlot(int slot){
+    m_gameMgr.reserNewGame();;
+    m_gameMgr.loadFromSaveSlot(slot);
+    isinitializd=false;
+    update();
+}
 void GameCanvas::keyPressEvent(QKeyEvent *e){
     switch (e->key()) {
     case Qt::Key_W:

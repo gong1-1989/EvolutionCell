@@ -2,7 +2,7 @@
 #define MONSTERCELL_H
 //怪物实体类
 #include <QColor>
-#include "../Core/gameglobal.h"
+#include "Core/gameglobal.h"
 class MonsterCell
 {
 public:

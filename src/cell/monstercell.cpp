@@ -1,10 +1,10 @@
 #include "monstercell.h"
-#include "../Utils/randomutil.h"
+#include "Utils/randomutil.h"
 #include <cmath>
 
 MonsterCell::MonsterCell():m_x(0),m_y(0),m_size(0),m_vx(0),m_vy(0),m_type(GameGlobal::NORAMAL) {}
 void MonsterCell::initRandom(qreal limitW, qreal limitH, qreal playerX, qreal playerY){
-    int offset=GameGlobal::getBuffDuration();
+    int offset=GameGlobal::getBoundOffset();
     do{
         m_x=RandomUtil::randInt(offset,limitW-offset);
         m_y=RandomUtil::randInt(offset,limitH-offset);

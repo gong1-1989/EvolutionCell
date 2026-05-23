@@ -4,9 +4,10 @@
 #include <QList>
 #include <QDateTime>
 #include "gameglobal.h"
-#include "../Cell/playercell.h"
-#include "../Cell/monstercell.h"
-#include "../Utils/collisionutil.h"
+#include "Cell/playercell.h"
+#include "Cell/monstercell.h"
+#include "Utils/collisionutil.h"
+#include "Utils/savemanager.h"
 class GameManager
 {
 public:
@@ -21,6 +22,10 @@ public:
 
     const PlayerCell& getPlayer()const;
     const QList<MonsterCell>& getMonsterList()const;
+
+    bool loadFromSaveSlot(int slot);
+    bool saveToSaveSlot(int slot);
+    void reserNewGame();
 private:
     void spawnMonster(int canvasW, int canvasH);
     void checkEat(int canvasW,int canvasH);

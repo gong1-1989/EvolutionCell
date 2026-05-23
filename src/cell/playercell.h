@@ -2,7 +2,7 @@
 #define PLAYERCELL_H
 //玩家实体类
 #include <QPointF>
-#include "../Core/gameglobal.h"
+#include "Core/gameglobal.h"
 #include "gene.h"
 class PlayerCell
 {

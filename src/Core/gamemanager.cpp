@@ -95,3 +95,58 @@ const PlayerCell& GameManager::getPlayer() const{
 const QList<MonsterCell>& GameManager::getMonsterList() const{
     return m_monsterList;
 }
+
+bool GameManager::saveToSaveSlot(int slot){
+    QJsonObject data;
+    QJsonObject playerObj;
+    playerObj["x"]=m_player.getX();
+    playerObj["y"]=m_player.getY();
+    playerObj["size"]=m_player.getSize();
+    data["player"]=playerObj;
+    QJsonArray geneArr;
+    const auto& geneList=m_player.getUnlockedGene();
+    for(const auto& g:geneList){
+        geneArr.append(g.getType());
+    }
+    data["gene"]=geneArr;
+    QJsonObject statObj;
+    statObj["total_eat"]=m_eatCount;
+    statObj["normal"]=m_normalEatNum;
+    statObj["elite"]=m_eliteEatNum;
+    statObj["special"]=m_specialEatNum;
+    data["stat"]=statObj;
+    return SaveManager::getInstance().saveToSlot(slot,data);
+}
+bool GameManager::loadFromSaveSlot(int slot){
+    QJsonObject data=SaveManager::getInstance().loadFromSlot(slot);
+    if(data.isEmpty()) return false;
+    QJsonObject pObj=data["player"].toObject();
+    qreal px=pObj["x"].toDouble();
+    qreal py=pObj["y"].toDouble();
+    int pSize=pObj["size"].toInt();
+    m_player.setPos(px,py);
+    int initS=GameGlobal::getPlayerInitSize();
+    int add=pSize-initS;
+    if(add>0)m_player.grow(add,GameGlobal::NORAMAL);
+    QJsonArray geneArr=data["gene"].toArray();
+    for(auto val:geneArr){
+        GameGlobal::GeneType t=static_cast<GameGlobal::GeneType>(val.toInt());
+        m_player.unlockGene(t);
+    }
+    QJsonObject stObj=data["stat"].toObject();
+    m_eatCount=stObj["total_eat"].toInt();
+    m_normalEatNum=stObj["normal"].toInt();
+    m_eliteEatNum=stObj["elite"].toInt();
+    m_specialEatNum=stObj["special"].toInt();
+    return true;
+}
+void GameManager::reserNewGame(){
+    m_player=PlayerCell();
+    m_monsterList.clear();
+    m_eatCount=0;
+    m_normalEatNum=0;
+    m_eliteEatNum=0;
+    m_specialEatNum=0;
+    m_sceneInited=false;
+    m_gameState=GameGlobal::RUNING;
+}

@@ -3,7 +3,7 @@
 //渲染模块：纯绘制逻辑
 #include <QPainter>
 #include <QRect>
-#include "../Core/gamemanager.h"
+#include "Core/gamemanager.h"
 class GameRender
 {
 public:
