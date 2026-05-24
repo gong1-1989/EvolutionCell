@@ -80,7 +80,6 @@ void GameManager::checkEat(int canvasW, int canvasH){
             if(m_eliteEatNum>=GameGlobal::getUnlockSpeedNum()) m_player.unlockGene(GameGlobal::GENE_SPEED_UP);
             if(m_specialEatNum>=GameGlobal::getUnlockGrowNum()) m_player.unlockGene(GameGlobal::GENE_GROW_BOOST);
             m_monsterList.removeAt(i);
-
             if(m_monsterList.size()<GameGlobal::getMaxMonsterCount()/2){
                 for(int j=m_monsterList.size();j<GameGlobal::getMaxMonsterCount();j++){
                     spawnMonster(canvasW,canvasH);
@@ -149,4 +148,19 @@ void GameManager::reserNewGame(){
     m_specialEatNum=0;
     m_sceneInited=false;
     m_gameState=GameGlobal::RUNING;
+}
+int GameManager::getPlayerDecomposeRisk()const{
+    return m_player.getDecomposeRisk();
+}
+void GameManager::initPlayerLifeLaw(GameGlobal::LifeLaw law){
+    m_player.initLifeLaw(law);
+}
+bool GameManager::executeBodyDecompose(GameGlobal::DecomposeLevel level){
+    return m_player.doDecompose(level);
+}
+GameGlobal::LifeLaw GameManager::getPlayerLawType()const{
+    return m_player.getCurrentLaw();
+}
+GameGlobal::DecomposeLevel GameManager::getplayerDecomposeLv()const{
+    return m_player.getDecomposeLevel();
 }

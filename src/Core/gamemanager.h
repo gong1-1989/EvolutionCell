@@ -26,6 +26,12 @@ public:
     bool loadFromSaveSlot(int slot);
     bool saveToSaveSlot(int slot);
     void reserNewGame();
+
+    void initPlayerLifeLaw(GameGlobal::LifeLaw law);
+    bool executeBodyDecompose(GameGlobal::DecomposeLevel level);
+    GameGlobal::LifeLaw getPlayerLawType()const;
+    GameGlobal::DecomposeLevel getplayerDecomposeLv()const;
+    int getPlayerDecomposeRisk()const;
 private:
     void spawnMonster(int canvasW, int canvasH);
     void checkEat(int canvasW,int canvasH);

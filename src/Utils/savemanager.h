@@ -6,8 +6,10 @@
 #include <QJsonDocument>
 #include <QString>
 #include <QDateTime>
+#include <QVector>
 
 struct SaveBriefInfo{
+    QString fileName;
     bool exist=false;
     QString saveTime;
     int eatTotal=0;
@@ -18,19 +20,15 @@ class SaveManager : public QObject
 {
     Q_OBJECT
 public:
-    static constexpr int SLOT_COUNT=5;
     static SaveManager& getInstance();
-    bool saveToSlot(int slot,const QJsonObject&data);
-    QJsonObject loadFromSlot(int slot);
-    bool slotHasSave(int slot);
-    QString getSaveTime(int slot);
-    bool deleteSlotSave(int slot);
-    SaveBriefInfo getSlotBriefInfo(int slot);
+    QString saveToSlot(const QJsonObject&data);
+    QJsonObject loadFromSlot(const QString& filePath);
+    bool deleteSlotSave(const QString& filePath);
+    QList<SaveBriefInfo> getBriefList();
 private:
     explicit SaveManager(QObject *parent = nullptr);
-    QString getSlotPath(int slot) const;
-
-signals:
+    QString getSlotPath(const QString& filePath) const;
+    QString generatetimeSaveName()const;
 };
 
 #endif // SAVEMANAGER_H

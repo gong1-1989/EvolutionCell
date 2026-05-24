@@ -101,4 +101,39 @@ qreal GameGlobal::getGeneGrowRatio(){
     auto obj=cfg.getGeneConfig()["gene_ratio"].toObject();
     return obj["grow"].toDouble(1.2);
 }
-
+qreal GameGlobal::getLightDocmposeSpeedLoss(){
+    auto obj=cfg.getGemeConfig()["decompose_attr"].toObject();
+    return obj["light_speed_loss"].toDouble(0.1);
+}
+qreal GameGlobal::getLightDocmposeCritGain(){
+    auto obj=cfg.getGemeConfig()["decompose_attr"].toObject();
+    return obj["light_crit_gain"].toDouble(0.15);
+}
+qreal GameGlobal::getDeepDocmposeHPLoss(){
+    auto obj=cfg.getGemeConfig()["decompose_attr"].toObject();
+    return obj["deep_hp_loss"].toDouble(0.15);
+}
+qreal GameGlobal::getDeepDocmposeAtkGain(){
+    auto obj=cfg.getGemeConfig()["decompose_attr"].toObject();
+    return obj["deep_atk_gain"].toDouble(0.25);
+}
+qreal GameGlobal::getFullDocmposeExtremeAt(){
+    auto obj=cfg.getGemeConfig()["decompose_attr"].toObject();
+    return obj["full_atk_gain"].toDouble(0.4);
+}
+int GameGlobal::getDecomposerRisk(DecomposeLevel lv){
+    switch (lv) {
+    case DECOMPOSE_LIGHT:
+        return 1;
+        break;
+    case DECOMPOSE_DEEP:
+        return 2;
+        break;
+    case DECOMPOSE_FULL:
+        return 3;
+        break;
+    default:
+        return 0;
+        break;
+    }
+}

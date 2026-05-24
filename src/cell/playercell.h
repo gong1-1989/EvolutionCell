@@ -14,11 +14,22 @@ public:
     void applySpeedDebuff();
     void clearTempEffect();
 
+    //开局选定生命法则，决定基础属性偏向
+    void initLifeLaw(GameGlobal::LifeLaw law);
+    //躯体解构核心方法
+    bool doDecompose(GameGlobal::DecomposeLevel targetLv);
+    qreal getCritBonus()const;
+    qreal getAttackBouns()const;
+    qreal getSpeedModify()const;
+    GameGlobal::LifeLaw getCurrentLaw()const;
+    GameGlobal::DecomposeLevel getDecomposeLevel()const;
+
     qreal getX()const;
     qreal getY()const;
     int getSize()const;
     void setPos(qreal x,qreal y);
     bool hasSpeedBuff()const;
+    int getDecomposeRisk()const;
 
     bool unlockGene(GameGlobal::GeneType type);
     qreal getGeneRangeRatio()const;
@@ -32,6 +43,14 @@ private:
     bool m_hasSpeedBuff;
     bool m_hasSpeedDebuff;
     QList<Gene> m_unlockGene;
+
+    GameGlobal::LifeLaw m_lawType;
+    GameGlobal::DecomposeLevel m_decomposeLv;
+    int m_currentDecomposeRisk;
+    qreal m_critBonus;
+    qreal m_atkBonus;
+    qreal m_speedLoss;
+    int m_symbiosisCount;
 };
 
 #endif // PLAYERCELL_H

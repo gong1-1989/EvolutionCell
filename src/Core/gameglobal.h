@@ -49,6 +49,32 @@ int getUnlockGrowNum();
 qreal getGeneRangeRatio();
 qreal getGenespeedRatio();
 qreal getGeneGrowRatio();
+
+//========三大生命法则======
+enum LifeLaw{
+    LAW_FISSION,        //裂变法则：躯体解构、近战爆发
+    LAW_SYMBIOSIS,      //共生法则：族群集合、生产续航
+    LAW_ILLUSION        //虚妄法则：时空拟态、偷袭控场
+};
+//=======四级躯体拆解等级====
+enum DecomposeLevel{
+    DECOMPOSE_NONE,     //原生未拆解
+    DECOMPOSE_LIGHT,    //微拆解：低风险小幅蜕变
+    DECOMPOSE_DEEP,     //深度解构：属性大幅取舍
+    DECOMPOSE_FULL      //完全重构：突破原生细胞形态
+};
+qreal getLightDocmposeSpeedLoss();//微拆解移速损耗
+qreal getLightDocmposeCritGain();//微拆解暴击增益
+qreal getDeepDocmposeHPLoss();  //深度解构生命损耗
+qreal getDeepDocmposeAtkGain();//深度解构攻击增益
+qreal getFullDocmposeExtremeAt();//完全重构极限攻击
+int getDecomposerRisk(DecomposeLevel lv);
+//======演化素材=====
+enum EvolutionMaterial{
+    MATERIAL_ORGAN,
+    MATERIAL_GENE,
+    MATERIAL_LAW_CRYST
+};
 }
 
 #endif // GAMEGLOBAL_H

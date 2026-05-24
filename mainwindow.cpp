@@ -12,13 +12,14 @@ MainWindow::MainWindow(QWidget *parent)
     this->setWindowTitle("进化亿重奏:细胞纪元");
     ui->stackedWidget->setCurrentWidget(ui->HomePage);
     ui->btnBackHome->setVisible(false);
-    ui->tableSaveList->setRowCount(5);
-    ui->tableSaveList->setColumnCount(4);
-    ui->tableSaveList->setHorizontalHeaderLabels({"存档槽位","存档时间","吞噬总数","细胞体型"});
+    ui->tableSaveList->setColumnCount(3);
+    ui->tableSaveList->setHorizontalHeaderLabels({"存档时间","吞噬总数","细胞体型"});
     ui->tableSaveList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableSaveList->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_rightMenu=new QMenu(this);
     QAction* actDel=m_rightMenu->addAction("删除存档");
     connect(actDel,&QAction::triggered,this,&MainWindow::deleteSelectedSave);
+    connect(ui->tableSaveList,&QTableWidget::customContextMenuRequested,this,&MainWindow::showSaveRightMenu);
     ui->btnLoadGame->setEnabled(hasAnyValidSave());
     refreshSaveTable();
 }
@@ -77,6 +78,7 @@ void MainWindow::on_btnEvolveNormal_clicked()
     ui->btnBackHome->setVisible(true);
     GameCanvas* canvas=ui->widgetCanvas;
     canvas->setFocus();
+    canvas->reserGameCanvas();
 }
 
 
@@ -123,19 +125,20 @@ bool MainWindow::hasAnyValidSave(){
 }
 void MainWindow::refreshSaveTable(){
     SaveManager& saveMgr=SaveManager::getInstance();
-    for(int row=0;row<5;++row){
-        int slot=row+1;
-        SaveBriefInfo info=saveMgr.getSlotBriefInfo(slot);
-        ui->tableSaveList->setItem(row,0,new QTableWidgetItem(QString("存档%1").arg(slot)));
-        if(info.exist){
-            ui->tableSaveList->setItem(row,1,new QTableWidgetItem(info.saveTime));
-            ui->tableSaveList->setItem(row,2,new QTableWidgetItem(info.eatTotal));
-            ui->tableSaveList->setItem(row,3,new QTableWidgetItem(info.cellSize));
-        }else{
-            ui->tableSaveList->setItem(row,1,new QTableWidgetItem("暂无存档"));
-            ui->tableSaveList->setItem(row,2,new QTableWidgetItem("-"));
-            ui->tableSaveList->setItem(row,3,new QTableWidgetItem("-"));
-        }
+    QList<SaveBriefInfo> infoList=saveMgr.getBriefList();
+    if(infoList.isEmpty())return;
+    ui->tableSaveList->setRowCount(infoList.size());
+    for(int row=0;row<infoList.size();++row){
+        SaveBriefInfo info=infoList[row];
+        QTableWidgetItem* item1=new QTableWidgetItem(info.saveTime);
+        QTableWidgetItem* item2=new QTableWidgetItem(QString::number(info.eatTotal));
+        QTableWidgetItem* item3=new QTableWidgetItem(QString::number(info.cellSize));
+        item1->setTextAlignment(Qt::AlignCenter);
+        item2->setTextAlignment(Qt::AlignCenter);
+        item3->setTextAlignment(Qt::AlignCenter);
+        ui->tableSaveList->setItem(row,0,item1);
+        ui->tableSaveList->setItem(row,1,item2);
+        ui->tableSaveList->setItem(row,2,item3);
     }
 }
 void MainWindow::showSaveRightMenu(const QPoint &pos){
@@ -155,5 +158,4 @@ void MainWindow::deleteSelectedSave(){
     refreshSaveTable();
     ui->btnLoadGame->setEnabled(hasAnyValidSave());
     m_currSelectSlot=-1;
-
 }

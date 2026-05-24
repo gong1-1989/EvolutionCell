@@ -38,29 +38,54 @@ void GameCanvas::loadGameBySlot(int slot){
     update();
 }
 void GameCanvas::keyPressEvent(QKeyEvent *e){
-    switch (e->key()) {
-    case Qt::Key_W:
-    case Qt::Key_Up:
-        k_w=true;
-        break;
-    case Qt::Key_S:
-    case Qt::Key_Down:
-        k_s=true;
-        break;
-    case Qt::Key_A:
-    case Qt::Key_Left:
-        k_a=true;
-        break;
-    case Qt::Key_D:
-    case Qt::Key_Right:
-        k_d=true;
-        break;
-    case Qt::Key_Escape:
-        if(m_gameMgr.getGameState()==GameGlobal::RUNING) m_gameMgr.pauseGame();
-        else m_gameMgr.resumeGame();
-        break;
-    default:
-        break;
+    if(m_gameMgr.getGameState()==GameGlobal::RUNING){
+        switch (e->key()) {
+        case Qt::Key_W:
+        case Qt::Key_Up:
+            k_w=true;
+            break;
+        case Qt::Key_S:
+        case Qt::Key_Down:
+            k_s=true;
+            break;
+        case Qt::Key_A:
+        case Qt::Key_Left:
+            k_a=true;
+            break;
+        case Qt::Key_D:
+        case Qt::Key_Right:
+            k_d=true;
+            break;
+        case Qt::Key_Escape:
+            m_gameMgr.pauseGame();
+            break;
+        case Qt::Key_1:
+            m_gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_LIGHT);
+            break;
+        case Qt::Key_2:
+            m_gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_DEEP);
+            break;
+        case Qt::Key_3:
+            m_gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_FULL);
+            break;
+        default:
+            break;
+        }
+    }else{
+        switch (e->key()) {
+        case Qt::Key_1:
+        case Qt::Key_2:
+        case Qt::Key_3:
+        case Qt::Key_4:
+        case Qt::Key_5:
+            m_gameMgr.saveToSaveSlot(e->key()-Qt::Key_0);
+            break;
+        case Qt::Key_Escape:
+            m_gameMgr.resumeGame();
+            break;
+        default:
+            break;
+        }
     }
 }
 void GameCanvas::keyReleaseEvent(QKeyEvent *e){

@@ -13,5 +13,12 @@
     "scene_setting":{
         "max_mnster_count":15,
         "bound_offset":30
+    },
+    "decompose_attr":{
+        "light_speed_loss":0.1,
+        "light_crit_gain":0.15,
+        "deep_hp-loss":0.15,
+        "deep_atk_gain":0.25,
+        "full_atk_gain":0.4
     }
 }

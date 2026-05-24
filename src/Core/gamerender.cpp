@@ -17,17 +17,75 @@ void GameRender::drawAll(QPainter *p, const GameManager &gameMgr, const QRect &c
         p->drawEllipse(m.getX()-m.getSize()/2,m.getY()-m.getSize()/2,m.getSize(),m.getSize());
     }
     auto& player=gameMgr.getPlayer();
-    p->setBrush(QColor(255,70,70));
+    GameGlobal::LifeLaw law=gameMgr.getPlayerLawType();
+    QColor playerColor;
+    switch (law) {
+    case GameGlobal::LAW_FISSION:
+        playerColor=QColor(255,42,42);
+        break;
+    case GameGlobal::LAW_SYMBIOSIS:
+        playerColor=QColor(42,209,104);
+        break;
+    case GameGlobal::LAW_ILLUSION:
+        playerColor=QColor(123,42,209);
+        break;
+    default:
+        playerColor=QColor(255,70,70);
+        break;
+    }
+    p->setBrush(playerColor);
+    p->setPen(Qt::NoPen);
+    p->drawEllipse(player.getX()-player.getSize()/2,player.getY()-player.getSize()/2,player.getSize(),player.getSize());
     if(!player.hasSpeedBuff()) {
         p->setPen(Qt::NoPen);
     }
     else {
         p->setPen(QPen(QColor(255,100,100),3));
     }
-    p->drawEllipse(player.getX()-player.getSize()/2,player.getY()-player.getSize()/2,player.getSize(),player.getSize());
+    p->drawEllipse(player.getX()-player.getSize()/2-2
+                   ,player.getY()-player.getSize()/2-2
+                   ,player.getSize()+4,player.getSize()+4);
     //==========绘制HUD==========
     int hudX=GameGlobal::HUD_PADDING;
     int hudY=GameGlobal::HUD_PADDING;
+    p->setPen(GameGlobal::HUD_TEXT_COLOR);
+    QString lawText;
+    switch (law) {
+    case GameGlobal::LAW_FISSION:
+        lawText="当前法则：裂变解构";
+        break;
+    case GameGlobal::LAW_SYMBIOSIS:
+        lawText="当前法则：菌群共生";
+        break;
+    case GameGlobal::LAW_ILLUSION:
+        lawText="当前法则：时空虚妄";
+        break;
+    default:
+        break;
+    }
+    p->drawText(hudX+80,hudY+30,lawText);
+    QString decText;
+    auto decompLv=gameMgr.getplayerDecomposeLv();
+    switch (decompLv) {
+    case GameGlobal::DECOMPOSE_NONE:
+        decText="躯体状态：原生形态";
+        break;
+    case GameGlobal::DECOMPOSE_LIGHT:
+        decText="躯体状态：微拆解蜕变";
+        break;
+    case GameGlobal::DECOMPOSE_DEEP:
+        decText="躯体状态：深度解构";
+        break;
+    case GameGlobal::DECOMPOSE_FULL:
+        decText="躯体状态：完全重构";
+        break;
+    default:
+        break;
+    }
+    p->drawText(hudX+80,hudY+50,decText);
+    QString riskText=QString("躯体畸变风险值：%1").arg(gameMgr.getPlayerDecomposeRisk());
+    p->setPen(QColor(255,120,120));
+    p->drawText(hudX+80,hudY+70,riskText);
     p->setPen(Qt::NoPen);
     p->setBrush(GameGlobal::PROGRESS_BG_COLOR);
     p->drawRect(hudX,hudY,GameGlobal::HUD_BAR_WIDTH,GameGlobal::HUD_BAR_HEIFHT);
@@ -62,6 +120,6 @@ void GameRender::drawAll(QPainter *p, const GameManager &gameMgr, const QRect &c
         p->setFont(QFont("Arial",24,QFont::Bold));
         p->drawText(canvasRect.center().x()-60,canvasRect.center().y()-20,"游戏暂停");
         p->setFont(QFont("Arial",12));
-        p->drawText(canvasRect.center().x()-65,canvasRect.center().y()+20,"按ESC继续游戏");
+        p->drawText(canvasRect.center().x()-65,canvasRect.center().y()+20,"按ESC继续游戏|1~5快捷存档");
     }
 }

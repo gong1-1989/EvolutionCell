@@ -1,7 +1,11 @@
 #include "savemanager.h"
 #include <QFile>
+#include <QDir>
 #include <QDebug>
-
+#include <QFileInfoList>
+const QString SAVE_DIR_PATH="save";
+const QString SAVE_FILE_PREFIX="save_";
+const QString SAVE_FILE_SUFFIX=".json";
 SaveManager::SaveManager(QObject *parent)
     : QObject{parent}
 {}
@@ -9,16 +13,27 @@ SaveManager& SaveManager::getInstance(){
     static SaveManager ins;
     return ins;
 }
-QString SaveManager::getSlotPath(int slot) const{
-    return QString("save/save_slot%1.json").arg(slot);
+QString SaveManager::generatetimeSaveName()const{
+    QString timeStr=QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+    return QString("%1%2%3").arg(SAVE_FILE_PREFIX).arg(timeStr).arg(SAVE_FILE_SUFFIX);
 }
-bool SaveManager::saveToSlot(int slot, const QJsonObject &data){
-    if(slot<1||slot>SLOT_COUNT) return false;
-    QString path=getSlotPath(slot);
+QString SaveManager::getSlotPath(const QString &filePath) const{
+    return QString("%1/%2").arg(SAVE_DIR_PATH).arg(filePath);
+}
+QString SaveManager::saveToSlot( const QJsonObject &data){
+    QDir saveDir(SAVE_DIR_PATH);
+    if(!saveDir.exists()){
+        bool createRet=saveDir.mkpath(".");
+        if(!createRet){
+            qDebug()<<"存档目录创建失败，无法保存存档！";
+            return "";
+        }
+    }
+    QString path=getSlotPath(getSlotPath(generatetimeSaveName()));
     QFile file(path);
     if(!file.open(QIODevice::WriteOnly|QIODevice::Text)){
-        qDebug()<<"存档位："<<slot<<"保存失败！";
-        return false;
+        qDebug()<<"存档失败，文件写入打开！";
+        return "";
     }
     QJsonObject saveObj;
     saveObj["timestamp"]=QDateTime::currentDateTime().toString("yyyy-MM-dd HH::mm");
@@ -26,11 +41,15 @@ bool SaveManager::saveToSlot(int slot, const QJsonObject &data){
     QJsonDocument doc(saveObj);
     file.write(doc.toJson(QJsonDocument::Indented));
     file.close();
-    return true;
+    qDebug()<<"存档成功！";
+    return path;
 }
-QJsonObject SaveManager::loadFromSlot(int slot){
-    if(slot<1||slot>SLOT_COUNT)return QJsonObject();
-    QString path=getSlotPath(slot);
+QJsonObject SaveManager::loadFromSlot(const QString &filePath){
+    if(!QDir(SAVE_DIR_PATH).exists()){
+        qDebug()<<"存档目录不存在，无法读取存档！";
+        return QJsonObject();
+    }
+    QString path=getSlotPath(filePath);
     QFile file(path);
     if(!file.open(QIODevice::ReadOnly|QIODevice::Text)) {
         qDebug()<<"存档文件加载失败："<<path;
@@ -39,40 +58,56 @@ QJsonObject SaveManager::loadFromSlot(int slot){
     QByteArray raw=file.readAll();
     file.close();
     QJsonDocument doc=QJsonDocument::fromJson(raw);
-    if(!doc.isObject()) return QJsonObject();
+    if(!doc.isObject()) {
+        qDebug()<<"存档位"<<filePath<<"数据格式损坏！";
+        return QJsonObject();
+    }
     return doc.object()["game_data"].toObject();
 }
-bool SaveManager::slotHasSave(int slot){
-    if(slot<1||slot>SLOT_COUNT)return false;
-    return QFile::exists(getSlotPath(slot));
+bool SaveManager::deleteSlotSave(const QString &filePath){
+    return QFile::remove(getSlotPath(filePath));
 }
-QString SaveManager::getSaveTime(int slot){
-    if(!slotHasSave(slot))return "空存档";
-    QJsonObject obj=loadFromSlot(slot);
-    if(obj.isEmpty())return "损坏存档";
-    return obj["timestamp"].toString("无记录");
-}
-bool SaveManager::deleteSlotSave(int slot){
-    if(!slotHasSave(slot))return true;
-    return QFile::remove(getSlotPath(slot));
-}
-SaveBriefInfo SaveManager::getSlotBriefInfo(int slot){
-    SaveBriefInfo info;
-    info.exist=false;
-    if(!slotHasSave(slot)) return info;
-    QString path=getSlotPath(slot);
-    QFile file(path);
-    if(!file.open(QIODevice::ReadOnly|QIODevice::Text))return info;
-    QByteArray raw=file.readAll();
-    file.close();
-    QJsonDocument doc=QJsonDocument::fromJson(raw);
-    if(!doc.isObject()) return info;
-    info.exist=true;
-    QJsonObject root=doc.object();
-    info.saveTime=root["timestamp"].toString("未知时间");
-    QJsonObject gameData=root["game_data"].toObject();
-    QJsonObject player=gameData["player"].toObject();
-    info.cellSize=player["size"].toInt(0);
-    info.eatTotal=gameData["stat"].toObject()["total_eat"].toInt(0);
-    return info;
+QList<SaveBriefInfo> SaveManager::getBriefList(){
+   QList<SaveBriefInfo> briefList;
+    QDir dir(SAVE_DIR_PATH);
+    if(!dir.exists()){
+        qDebug()<<"存档目录不存在，无法读取存档！";
+        return briefList;
+    }
+    QFileInfoList fileList=dir.entryInfoList(QDir::Files);
+    for(const QFileInfo& info:fileList){
+        QString fileName=info.fileName();
+        if(!fileName.startsWith(SAVE_FILE_PREFIX)||!fileName.endsWith(SAVE_FILE_SUFFIX))
+            continue;
+        SaveBriefInfo brief;
+        brief.fileName=fileName;
+        brief.exist=true;
+        QFile file(info.absoluteFilePath());
+        if(!file.open(QIODevice::ReadOnly|QIODevice::Text)){
+            brief.saveTime="损坏存档";
+            briefList.append(brief);
+            file.close();
+            continue;
+        }
+        QByteArray raw=file.readAll();
+        file.close();
+        QJsonDocument doc=QJsonDocument::fromJson(raw);
+        if(!doc.isObject()){
+            brief.saveTime="格式异常";
+            briefList.append(brief);
+            continue;
+        }
+        QJsonObject root=doc.object();
+        brief.saveTime=root["timestamp"].toString("未知时间");
+        QJsonObject gameData=root["game_data"].toObject();
+        QJsonObject player=root["player"].toObject();
+        brief.cellSize=player["size"].toInt();
+        QJsonObject stat=gameData["stat"].toObject();
+        brief.eatTotal=stat["total_eat"].toInt();
+        briefList.append(brief);
+    }
+    std::sor(briefList.begin(),briefList.end(),[](const SaveBriefInfo&a,const SaveBriefInfo&b){
+        return a.saveTime>b.saveTime;
+    });
+    return briefList;
 }
