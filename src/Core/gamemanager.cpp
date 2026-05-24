@@ -16,12 +16,6 @@ void GameManager::initScene(int w, int h){
         spawnMonster(w,h);
     }
     m_sceneInited=true;
-    m_eatCount=0;
-    m_gameState=GameGlobal::RUNING;
-
-    m_normalEatNum=0;
-    m_eliteEatNum=0;
-    m_specialEatNum=0;
 }
 
 void GameManager::pauseGame(){
@@ -40,10 +34,15 @@ void GameManager::frameUpdate(bool keyW, bool keyA, bool keyS, bool keyD, int ca
     if(!m_sceneInited||m_gameState==GameGlobal::PAUSED)return;
     updateBuffStatus();
     m_player.move(keyW,keyA,keyS,keyD,canvasW,canvasH);
+
+    m_player.updateSymbiosisFollow(m_player.getX(),m_player.getY());
+
     for(MonsterCell &mon:m_monsterList){
         mon.move(canvasW,canvasH);
     }
     checkEat(canvasW,canvasH);
+
+    updateSymbiosisSystem();
 }
 void GameManager::updateBuffStatus(){
     if(m_buffActive){
@@ -85,6 +84,18 @@ void GameManager::checkEat(int canvasW, int canvasH){
                     spawnMonster(canvasW,canvasH);
                 }
             }
+
+            int randRate=RandomUtil::randInt(1,100);
+            GameGlobal::SymbiosisMode createMode;
+            if(mon.getType()==GameGlobal::ELITE&&randRate<=40)createMode=GameGlobal::SYMBIO_PERM;
+            else if(mon.getType()==GameGlobal::SPECIAL&&randRate<=60)createMode=GameGlobal::SYMBIO_ABSORB;
+            else if(randRate<=25)createMode=GameGlobal::SYMBIO_TEMP;
+            else return;
+            SymbiosisCell newSymCell;
+            newSymCell.initSymbiosis(mon.getType(),mon.getX(),mon.getY());
+            newSymCell.setSymbiosisMode(createMode);
+            newSymCell.setBornTime(QDateTime::currentMSecsSinceEpoch());
+            m_player.addSymbiosisCell(newSymCell);
         }
     }
 }
@@ -95,7 +106,7 @@ const QList<MonsterCell>& GameManager::getMonsterList() const{
     return m_monsterList;
 }
 
-bool GameManager::saveToSaveSlot(int slot){
+QString GameManager::saveToSaveSlot(){
     QJsonObject data;
     QJsonObject playerObj;
     playerObj["x"]=m_player.getX();
@@ -114,10 +125,10 @@ bool GameManager::saveToSaveSlot(int slot){
     statObj["elite"]=m_eliteEatNum;
     statObj["special"]=m_specialEatNum;
     data["stat"]=statObj;
-    return SaveManager::getInstance().saveToSlot(slot,data);
+    return SaveManager::getInstance().saveToSlot(data);
 }
-bool GameManager::loadFromSaveSlot(int slot){
-    QJsonObject data=SaveManager::getInstance().loadFromSlot(slot);
+bool GameManager::loadFromSaveSlot(const QString &path){
+    QJsonObject data=SaveManager::getInstance().loadFromSlot(path);
     if(data.isEmpty()) return false;
     QJsonObject pObj=data["player"].toObject();
     qreal px=pObj["x"].toDouble();
@@ -163,4 +174,17 @@ GameGlobal::LifeLaw GameManager::getPlayerLawType()const{
 }
 GameGlobal::DecomposeLevel GameManager::getplayerDecomposeLv()const{
     return m_player.getDecomposeLevel();
+}
+void GameManager::updateSymbiosisSystem(){
+    qint64 now=QDateTime::currentMSecsSinceEpoch();
+    m_player.clealExpiredSymbiosis(now);
+}
+int GameManager::getPlayerSymbiosisNum()const{
+    return m_player.getSymbiosisCount();
+}
+GameGlobal::RejectLevel GameManager::getPlayerRejectLevel()const{
+    return m_player.getcurrentRejectLevel();
+}
+const QList<SymbiosisCell>& GameManager::getSymbiosisList() const{
+    return m_player.getSymbiosisList();
 }

@@ -45,6 +45,14 @@ void GameRender::drawAll(QPainter *p, const GameManager &gameMgr, const QRect &c
     p->drawEllipse(player.getX()-player.getSize()/2-2
                    ,player.getY()-player.getSize()/2-2
                    ,player.getSize()+4,player.getSize()+4);
+
+    auto&symList=gameMgr.getSymbiosisList();
+    for(const auto& symCell:symList){
+        p->setBrush(symCell.getColor());
+        p->setPen(Qt::white);
+        int sz=symCell.getSize();
+        p->drawEllipse(symCell.getX()-sz/2,symCell.getY()-sz/2,sz,sz);
+    }
     //==========绘制HUD==========
     int hudX=GameGlobal::HUD_PADDING;
     int hudY=GameGlobal::HUD_PADDING;
@@ -64,6 +72,7 @@ void GameRender::drawAll(QPainter *p, const GameManager &gameMgr, const QRect &c
         break;
     }
     p->drawText(hudX+80,hudY+30,lawText);
+
     QString decText;
     auto decompLv=gameMgr.getplayerDecomposeLv();
     switch (decompLv) {
@@ -81,8 +90,32 @@ void GameRender::drawAll(QPainter *p, const GameManager &gameMgr, const QRect &c
         break;
     default:
         break;
-    }
+    }    
     p->drawText(hudX+80,hudY+50,decText);
+
+    int symNum=gameMgr.getPlayerSymbiosisNum();
+    QString symText=QString("共生菌体数量：%1/%2").arg(symNum).arg(GameGlobal::getMaxSymbiosisCount());
+    p->drawText(hudX+180,hudY+35,symText);
+    QString rejectText;
+    QColor rejectColeor;
+    auto rejectLv=gameMgr.getPlayerRejectLevel();
+    switch (rejectLv) {
+    case GameGlobal::REJECT_SAFE:
+        rejectText="基因状态：稳定安全";
+        rejectColeor=QColor(80,220,80);
+        break;
+    case GameGlobal::REJECT_WARNING:
+        rejectText="基因状态：轻度排斥";
+        rejectColeor=QColor(220,180,60);
+        break;
+    case GameGlobal::REJECT_DANGER:
+        rejectText="基因状态：高危紊乱";
+        rejectColeor=QColor(220,60,60);
+        break;
+    }
+    p->setPen(rejectColeor);
+    p->drawText(hudX+180,hudY,rejectText);
+
     QString riskText=QString("躯体畸变风险值：%1").arg(gameMgr.getPlayerDecomposeRisk());
     p->setPen(QColor(255,120,120));
     p->drawText(hudX+80,hudY+70,riskText);
@@ -120,6 +153,6 @@ void GameRender::drawAll(QPainter *p, const GameManager &gameMgr, const QRect &c
         p->setFont(QFont("Arial",24,QFont::Bold));
         p->drawText(canvasRect.center().x()-60,canvasRect.center().y()-20,"游戏暂停");
         p->setFont(QFont("Arial",12));
-        p->drawText(canvasRect.center().x()-65,canvasRect.center().y()+20,"按ESC继续游戏|1~5快捷存档");
+        p->drawText(canvasRect.center().x()-65,canvasRect.center().y()+20,"按ESC继续游戏|按T键快捷存档");
     }
 }

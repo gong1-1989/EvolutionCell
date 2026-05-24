@@ -75,6 +75,24 @@ enum EvolutionMaterial{
     MATERIAL_GENE,
     MATERIAL_LAW_CRYST
 };
+//======共生模式枚举====
+enum SymbiosisMode{
+    SYMBIO_TEMP,        //临时寄生：限时生效
+    SYMBIO_PERM,        //永久共生：长期绑定
+    SYMBIO_ABSORB       //吞噬同化：完全变为族群
+};
+//======基因排斥等级====
+enum RejectLevel{
+    REJECT_SAFE,        //安全范围，无负面影响
+    REJECT_WARNING,     //轻度排斥，小幅属性衰弱
+    REJECT_DANGER       //高危排斥，大幅战力损耗
+};
+int getMaxSymbiosisCount();     //最大共生容纳数量
+int getSingleRejectValue();     //单个共生体排斥增加值
+int getRejectWarningThreshold();//排斥分级阈值
+int getRejectDangerThreshold();
+int getTempSymbiosisDuration(); //临时寄生持续时间（ms）
+qreal getSymbiosisFollowRange();//共生体跟随距离范围
 }
 
 #endif // GAMEGLOBAL_H

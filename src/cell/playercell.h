@@ -4,6 +4,7 @@
 #include <QPointF>
 #include "Core/gameglobal.h"
 #include "gene.h"
+#include "symbiosiscell.h"
 class PlayerCell
 {
 public:
@@ -37,6 +38,14 @@ public:
     qreal getGeneGrowRatio()const;
     const QList<Gene>& getUnlockedGene()const;
 
+    bool addSymbiosisCell(const SymbiosisCell& cell);
+    void clealExpiredSymbiosis(qint64 nowTime);
+    GameGlobal::RejectLevel getcurrentRejectLevel()const;
+    qreal getRejectAttrModify()const;
+    int getSymbiosisCount()const;
+    const QList<SymbiosisCell>& getSymbiosisList()const;
+    void updateSymbiosisFollow(qreal playerX, qreal playerY);
+
 private:
     qreal m_x,m_y,m_speed;
     int m_size;
@@ -51,6 +60,9 @@ private:
     qreal m_atkBonus;
     qreal m_speedLoss;
     int m_symbiosisCount;
+
+    QList<SymbiosisCell> m_symbiosisList;
+    int m_geneRejectValue;
 };
 
 #endif // PLAYERCELL_H

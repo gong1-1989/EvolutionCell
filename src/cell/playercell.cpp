@@ -10,9 +10,8 @@ PlayerCell::PlayerCell()
     ,m_decomposeLv(GameGlobal::DECOMPOSE_NONE)
     ,m_currentDecomposeRisk(0)
     ,m_critBonus(0.0),m_atkBonus(0.0),m_speedLoss(0.0)
-    ,m_symbiosisCount(0){
-
-}
+    ,m_symbiosisCount(0),m_geneRejectValue(0)
+{}
 
 void PlayerCell::move(bool w, bool a, bool s, bool d, int canvasW, int canvasH){
     qreal speed=GameGlobal::getPlayerSpeed()*getGeneSpeedRatio()-m_speedLoss;
@@ -166,4 +165,52 @@ GameGlobal::DecomposeLevel PlayerCell::getDecomposeLevel()const{
 }
 int PlayerCell::getDecomposeRisk()const{
     return m_currentDecomposeRisk;
+}
+bool PlayerCell::addSymbiosisCell(const SymbiosisCell &cell){
+    int maxCount=GameGlobal::getMaxSymbiosisCount();
+    if(m_symbiosisList.size()>=maxCount)return false;
+    m_symbiosisList.append(cell);
+    m_geneRejectValue+=GameGlobal::getSingleRejectValue();
+    return true;
+}
+void PlayerCell::clealExpiredSymbiosis(qint64 nowTime){
+    for(int i=m_symbiosisList.size()-1;i>=0;--i){
+        if(m_symbiosisList[i].isTempExpired(nowTime)){
+            m_geneRejectValue-=GameGlobal::getSingleRejectValue();
+            m_symbiosisList.removeAt(i);
+        }
+    }
+}
+GameGlobal::RejectLevel PlayerCell::getcurrentRejectLevel()const{
+    int warnLimit=GameGlobal::getRejectWarningThreshold();
+    int dangerLimit=GameGlobal::getRejectDangerThreshold();
+    if(m_geneRejectValue>=dangerLimit)return GameGlobal::REJECT_DANGER;
+    else if(m_geneRejectValue>=warnLimit)return GameGlobal::REJECT_WARNING;
+    return GameGlobal::REJECT_SAFE;
+}
+qreal PlayerCell::getRejectAttrModify()const{
+    auto level=getcurrentRejectLevel();
+    switch (level) {
+    case GameGlobal::REJECT_WARNING:
+        return 0.85;
+        break;
+    case GameGlobal::REJECT_DANGER:
+        return 0.6;
+        break;
+    default:
+        return 1.0;
+        break;
+    }
+}
+int PlayerCell::getSymbiosisCount() const{
+    return m_symbiosisList.size();
+}
+const QList<SymbiosisCell>& PlayerCell::getSymbiosisList() const{
+    return m_symbiosisList;
+}
+void PlayerCell::updateSymbiosisFollow(qreal playerX, qreal playerY){
+    qreal range=GameGlobal::getSymbiosisFollowRange();
+    for(auto& cell:m_symbiosisList){
+        cell.followUpdate(playerX,playerY,range);
+    }
 }

@@ -36,6 +36,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/Cell/gene.h src/Cell/gene.cpp
         src/Utils/configreader.h src/Utils/configreader.cpp
         src/Utils/savemanager.h src/Utils/savemanager.cpp
+        src/cell/symbiosiscell.h src/cell/symbiosiscell.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET EvolutionCell APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

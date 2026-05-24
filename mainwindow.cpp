@@ -5,7 +5,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    ,m_currSelectSlot(-1)
+    ,m_currSelectFile("")
 {
     ui->setupUi(this);
     this->setFixedSize(800,600);
@@ -107,32 +107,28 @@ void MainWindow::on_btnTrail_clicked()
 
 void MainWindow::on_tableSaveList_cellDoubleClicked(int row, int column)
 {
-    int slot=row+1;
-    if(!SaveManager::getInstance().slotHasSave(slot)){
-        QMessageBox::information(this,"提示","该槽位无存档");
-        return;
-    }
-    ui->widgetCanvas->loadGameBySlot(slot);
+    Q_UNUSED(column);
+    QTableWidgetItem* item=ui->tableSaveList->item(row,0);
+    if(!item) return;
+    QString path=item->data(Qt::UserRole).toString();
+    if(path.isEmpty()) return;
+    ui->widgetCanvas->loadGameBySlot(path);
     ui->stackedWidget->setCurrentWidget(ui->GamePage);
 }
 bool MainWindow::hasAnyValidSave(){
-    for(int i=1;i<=SaveManager::SLOT_COUNT;++i){
-        if(SaveManager::getInstance().slotHasSave(i)){
-            return true;
-        }
-    }
-    return false;
+    auto list=SaveManager::getInstance().getBriefList();
+    return !list.isEmpty();
 }
 void MainWindow::refreshSaveTable(){
     SaveManager& saveMgr=SaveManager::getInstance();
     QList<SaveBriefInfo> infoList=saveMgr.getBriefList();
-    if(infoList.isEmpty())return;
     ui->tableSaveList->setRowCount(infoList.size());
     for(int row=0;row<infoList.size();++row){
         SaveBriefInfo info=infoList[row];
         QTableWidgetItem* item1=new QTableWidgetItem(info.saveTime);
         QTableWidgetItem* item2=new QTableWidgetItem(QString::number(info.eatTotal));
         QTableWidgetItem* item3=new QTableWidgetItem(QString::number(info.cellSize));
+        item1->setData(Qt::UserRole,info.fileName);
         item1->setTextAlignment(Qt::AlignCenter);
         item2->setTextAlignment(Qt::AlignCenter);
         item3->setTextAlignment(Qt::AlignCenter);
@@ -140,22 +136,21 @@ void MainWindow::refreshSaveTable(){
         ui->tableSaveList->setItem(row,1,item2);
         ui->tableSaveList->setItem(row,2,item3);
     }
+    ui->btnLoadGame->setEnabled(!infoList.isEmpty());
 }
 void MainWindow::showSaveRightMenu(const QPoint &pos){
     QTableWidgetItem*item=ui->tableSaveList->itemAt(pos);
     if(!item)return;
-    int row=item->row();
-    m_currSelectSlot=row+1;
-    if(!SaveManager::getInstance().slotHasSave(m_currSelectSlot))return;
+    m_currSelectFile=item->data(Qt::UserRole).toString();
+    if(m_currSelectFile.isEmpty()) return;
     m_rightMenu->exec(ui->tableSaveList->viewport()->mapToGlobal(pos));
 }
 void MainWindow::deleteSelectedSave(){
-    if((m_currSelectSlot<1)||(m_currSelectSlot>5)) return;
+    if(m_currSelectFile.isEmpty()) return;
     QMessageBox::StandardButton ret=QMessageBox::question(this,"删除确认","确定要删除该存档吗？删除后无法恢复！"
                                                             ,QMessageBox::Yes|QMessageBox::No);
     if(ret!=QMessageBox::Yes)return;
-    SaveManager::getInstance().deleteSlotSave(m_currSelectSlot);
+    SaveManager::getInstance().deleteSlotSave(m_currSelectFile);
     refreshSaveTable();
     ui->btnLoadGame->setEnabled(hasAnyValidSave());
-    m_currSelectSlot=-1;
 }

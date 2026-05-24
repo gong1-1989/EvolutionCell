@@ -20,5 +20,14 @@
         "deep_hp-loss":0.15,
         "deep_atk_gain":0.25,
         "full_atk_gain":0.4
+    },
+    "symbiosis_setting":{
+        "max_count":6,
+        "single_reject":8,
+        "warn_threshold":25,
+        "danger_threshold":50,
+        "temp_duration":8000,
+        "follow_range":60.0
     }
+
 }

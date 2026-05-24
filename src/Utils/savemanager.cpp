@@ -29,10 +29,10 @@ QString SaveManager::saveToSlot( const QJsonObject &data){
             return "";
         }
     }
-    QString path=getSlotPath(getSlotPath(generatetimeSaveName()));
+    QString path=getSlotPath(generatetimeSaveName());
     QFile file(path);
     if(!file.open(QIODevice::WriteOnly|QIODevice::Text)){
-        qDebug()<<"存档失败，文件写入打开！";
+        qDebug()<<"存档失败，文件无法写入！";
         return "";
     }
     QJsonObject saveObj;
@@ -100,13 +100,13 @@ QList<SaveBriefInfo> SaveManager::getBriefList(){
         QJsonObject root=doc.object();
         brief.saveTime=root["timestamp"].toString("未知时间");
         QJsonObject gameData=root["game_data"].toObject();
-        QJsonObject player=root["player"].toObject();
+        QJsonObject player=gameData["player"].toObject();
         brief.cellSize=player["size"].toInt();
         QJsonObject stat=gameData["stat"].toObject();
         brief.eatTotal=stat["total_eat"].toInt();
         briefList.append(brief);
     }
-    std::sor(briefList.begin(),briefList.end(),[](const SaveBriefInfo&a,const SaveBriefInfo&b){
+    std::sort(briefList.begin(),briefList.end(),[](const SaveBriefInfo&a,const SaveBriefInfo&b){
         return a.saveTime>b.saveTime;
     });
     return briefList;

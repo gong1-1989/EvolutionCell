@@ -8,6 +8,7 @@
 #include "Cell/monstercell.h"
 #include "Utils/collisionutil.h"
 #include "Utils/savemanager.h"
+#include "Utils/randomutil.h"
 class GameManager
 {
 public:
@@ -23,8 +24,8 @@ public:
     const PlayerCell& getPlayer()const;
     const QList<MonsterCell>& getMonsterList()const;
 
-    bool loadFromSaveSlot(int slot);
-    bool saveToSaveSlot(int slot);
+    bool loadFromSaveSlot(const QString& path);
+    QString saveToSaveSlot();
     void reserNewGame();
 
     void initPlayerLifeLaw(GameGlobal::LifeLaw law);
@@ -32,6 +33,10 @@ public:
     GameGlobal::LifeLaw getPlayerLawType()const;
     GameGlobal::DecomposeLevel getplayerDecomposeLv()const;
     int getPlayerDecomposeRisk()const;
+
+    int getPlayerSymbiosisNum()const;
+    GameGlobal::RejectLevel getPlayerRejectLevel()const;
+    const QList<SymbiosisCell>& getSymbiosisList()const;
 private:
     void spawnMonster(int canvasW, int canvasH);
     void checkEat(int canvasW,int canvasH);
@@ -48,6 +53,8 @@ private:
     int m_normalEatNum;
     int m_eliteEatNum;
     int m_specialEatNum;
+
+    void updateSymbiosisSystem();
 };
 
 #endif // GAMEMANAGER_H

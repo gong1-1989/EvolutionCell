@@ -13,7 +13,7 @@ class GameCanvas : public QWidget
 public:
     explicit GameCanvas(QWidget *parent = nullptr);
     void reserGameCanvas();
-    void loadGameBySlot(int slot);
+    void loadGameBySlot(const QString&path);
 protected:
     void paintEvent(QPaintEvent *e)override;
     void keyPressEvent(QKeyEvent *e)override;

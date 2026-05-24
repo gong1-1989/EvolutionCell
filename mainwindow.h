@@ -44,11 +44,11 @@ private slots:
     void on_tableSaveList_cellDoubleClicked(int row, int column);
     void showSaveRightMenu(const QPoint& pos);
     void refreshSaveTable();
+    bool hasAnyValidSave();
 
 private:
     Ui::MainWindow *ui;
     QMenu *m_rightMenu;
-    int m_currSelectSlot;
-    bool hasAnyValidSave();
+    QString m_currSelectFile;
 };
 #endif // MAINWINDOW_H
