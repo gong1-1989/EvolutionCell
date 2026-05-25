@@ -9,6 +9,7 @@
 #include "Utils/collisionutil.h"
 #include "Utils/savemanager.h"
 #include "Utils/randomutil.h"
+#include "cell/ghostcell.h"
 class GameManager
 {
 public:
@@ -37,6 +38,12 @@ public:
     int getPlayerSymbiosisNum()const;
     GameGlobal::RejectLevel getPlayerRejectLevel()const;
     const QList<SymbiosisCell>& getSymbiosisList()const;
+
+    bool rollbackTolastNode();
+    bool rollbackToAssignNode(int index);
+    int getHistoryNodeTotal()const;
+    int getGhostCount()const;
+    const QList<GhostCell>& getGhostList()const;
 private:
     void spawnMonster(int canvasW, int canvasH);
     void checkEat(int canvasW,int canvasH);
@@ -56,6 +63,9 @@ private:
 
     void updateSymbiosisSystem();
     void checkSymbiosisAttack(int canvasW, int canvasH);
+
+    QList<GhostCell> m_ghostList;
+    void updateGhostSystem(int canvasW, int canvasH);
 };
 
 #endif // GAMEMANAGER_H

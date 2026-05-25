@@ -53,6 +53,14 @@ void GameRender::drawAll(QPainter *p, const GameManager &gameMgr, const QRect &c
         int sz=symCell.getSize();
         p->drawEllipse(symCell.getX()-sz/2,symCell.getY()-sz/2,sz,sz);
     }
+
+    const QList<GhostCell>& ghostList=gameMgr.getGhostList();
+    for(const GhostCell& ghost:ghostList){
+        p->setBrush(ghost.getColor());
+        p->setPen(Qt::transparent);
+        int sz=ghost.getSize();
+        p->drawEllipse(ghost.getX()-sz/2,ghost.getY()-sz/2,sz,sz);
+    }
     //==========绘制HUD==========
     int hudX=GameGlobal::HUD_PADDING;
     int hudY=GameGlobal::HUD_PADDING;

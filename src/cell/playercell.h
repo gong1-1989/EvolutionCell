@@ -5,6 +5,7 @@
 #include "Core/gameglobal.h"
 #include "gene.h"
 #include "symbiosiscell.h"
+#include "ghostcell.h"
 class PlayerCell
 {
 public:
@@ -50,6 +51,14 @@ public:
     void resetSymbiosis();
     void setGenRejectValue(int value);
 
+    void recordCurrentEvolveNode();
+    bool rollbackToLastNode();
+    bool rollbackToAssignNode(int index);
+    int getHistoryNodeCount()const;
+    GameGlobal::EvolveHistoryNode getHistoryNodeByiIndex(int index)const;
+    void resetHistory();
+    void setHistoryList(const GameGlobal::EvolveHistoryNode& hisNode);
+
 private:
     qreal m_x,m_y,m_speed;
     int m_size;
@@ -67,6 +76,8 @@ private:
 
     QList<SymbiosisCell> m_symbiosisList;
     int m_geneRejectValue;
+
+    QList<GameGlobal::EvolveHistoryNode> m_historyNodeList;
 };
 
 #endif // PLAYERCELL_H

@@ -6,8 +6,9 @@ GameManager::GameManager():m_sceneInited(false)
     ,m_eatCount(0)
     ,m_normalEatNum(0)
     ,m_eliteEatNum(0)
-    ,m_specialEatNum(0)
-{}
+    ,m_specialEatNum(0){
+    m_ghostList.clear();
+}
 
 void GameManager::initScene(int w, int h){
     m_player.setPos(w/2.0,h/2.0);
@@ -42,6 +43,9 @@ void GameManager::frameUpdate(bool keyW, bool keyA, bool keyS, bool keyD, int ca
         sym.followUpdate(m_player.getX(),m_player.getY(),followRange,m_monsterList);
     }
     checkSymbiosisAttack(canvasW,canvasH);
+
+    updateGhostSystem(canvasW,canvasH);
+
     for(MonsterCell &mon:m_monsterList){
         mon.move(canvasW,canvasH);
     }
@@ -192,6 +196,38 @@ QString GameManager::saveToSaveSlot(){
     }
     data["symbiosis_list"]=symbiosisArr;
     data["gen_reject_value"]=m_player.getGeneRejectValue();
+
+    QJsonArray historyNodeArr;
+    int nodeCount=m_player.getHistoryNodeCount();
+    for(int i=0;i<nodeCount;++i){
+        GameGlobal::EvolveHistoryNode node=m_player.getHistoryNodeByiIndex(i);
+        QJsonObject nodeObj;
+        nodeObj["pos_x"]=node.posX;
+        nodeObj["pos_y"]=node.posY;
+        nodeObj["body_size"]=node.bodySize;
+        nodeObj["law_type"]=(int)node.currentLaw;
+        nodeObj["decompose_lv"]=(int)node.decomposeLv;
+        nodeObj["decompose_risk"]=node.decomposeRisk;
+        nodeObj["gene_reject"]=node.geneRejectValue;
+        QJsonArray geneTypeArr;
+        for(int t:node.unlockGeneType){
+            geneTypeArr.append(t);
+        }
+        nodeObj["gene_list"]=geneTypeArr;
+        historyNodeArr.append(nodeObj);
+    }
+    data["history_node_list"]=historyNodeArr;
+
+    QJsonArray ghostArr;
+    for(const GhostCell& ghost:m_ghostList){
+        QJsonObject ghostObj;
+        ghostObj["pos_x"]=ghost.getX();
+        ghostObj["pos_y"]=ghost.getY();
+        ghostObj["size"]=ghost.getSize();
+        ghostObj["born_time"]=ghost.getBornTime();
+        ghostArr.append(ghostObj);
+    }
+    data["ghost_list"]=ghostArr;
     return SaveManager::getInstance().saveToSlot(data);
 }
 bool GameManager::loadFromSaveSlot(const QString &path){
@@ -235,6 +271,38 @@ bool GameManager::loadFromSaveSlot(const QString &path){
         symCell.setLastAttackTime(lastAtkTime);
         m_player.addSymbiosisCell(symCell);
     }
+    m_player.resetHistory();
+    QJsonArray historyNodeArr=data.value("history_node_list").toArray();
+    for(auto nodeVal:historyNodeArr){
+        QJsonObject nodeObj=nodeVal.toObject();
+        GameGlobal::EvolveHistoryNode node;
+        node.posX=nodeObj.value("pos_x").toDouble();
+        node.posY=nodeObj.value("pos_y").toDouble();
+        node.bodySize=nodeObj.value("body_size").toInt();
+        node.currentLaw=static_cast<GameGlobal::LifeLaw>(nodeObj.value("law_type").toInt());
+        node.decomposeLv=static_cast<GameGlobal::DecomposeLevel>(nodeObj.value("decompose_lv").toInt());
+        node.decomposeRisk=nodeObj.value("decompose_risk").toInt();
+        node.geneRejectValue=nodeObj.value("gene_reject").toInt();
+        QJsonArray geneTypeArr=nodeObj.value("gene_list").toArray();
+        for(auto gVal:geneTypeArr){
+            node.unlockGeneType.append(gVal.toInt());
+        }
+        m_player.setHistoryList(node);
+    }
+
+    m_ghostList.clear();
+    QJsonArray ghostArr=data.value("ghost_list").toArray();
+    for(auto ghostVal:ghostArr){
+        QJsonObject ghostObj=ghostVal.toObject();
+        GhostCell ghost;
+        qreal x=ghostObj.value("pos_x").toDouble();
+        qreal y=ghostObj.value("pos_y").toDouble();
+        int size=ghostObj.value("size").toInt();
+        qint64 bornTime=ghostObj.value("born_time").toVariant().toLongLong();
+        ghost.initGhost(x,y,size,m_player.getCurrentLaw());
+        ghost.setBornTime(bornTime);
+        m_ghostList.append(ghost);
+    }
     return true;
 }
 void GameManager::reserNewGame(){
@@ -247,6 +315,8 @@ void GameManager::reserNewGame(){
     m_sceneInited=false;
     m_gameState=GameGlobal::RUNING;
     m_player.resetSymbiosis();
+    m_ghostList.clear();
+    m_player.recordCurrentEvolveNode();
 }
 int GameManager::getPlayerDecomposeRisk()const{
     return m_player.getDecomposeRisk();
@@ -275,4 +345,76 @@ GameGlobal::RejectLevel GameManager::getPlayerRejectLevel()const{
 }
 const QList<SymbiosisCell>& GameManager::getSymbiosisList() const{
     return m_player.getSymbiosisList();
+}
+
+void GameManager::updateGhostSystem(int canvasW, int canvasH){
+    qint64 now=QDateTime::currentMSecsSinceEpoch();
+    qreal atkMult=GameGlobal::getGhostAttackMult();
+    for(int i=m_ghostList.size()-1;i>=0;--i){
+        GhostCell& ghost=m_ghostList[i];
+        if(ghost.isLifeExpired(now)){
+            m_ghostList.removeAt(i);
+            continue;
+        }
+        ghost.update(m_player.getX(),m_player.getY(),m_monsterList);
+        for(int j=m_monsterList.size()-1;j>=0;--j){
+            MonsterCell& mon=m_monsterList[j];
+            if(ghost.checkAttackHit(mon)){
+                m_player.grow(mon.getSize()/GameGlobal::getGrowRatio(),mon.getType());
+                m_eatCount++;
+                if(mon.getType()==GameGlobal::NORAMAL) m_normalEatNum++;
+                if(mon.getType()==GameGlobal::ELITE) {
+                    m_eliteEatNum++;
+                    m_buffStartTime=QDateTime::currentMSecsSinceEpoch();
+                    m_buffActive=true;
+                }
+                if(mon.getType()==GameGlobal::SPECIAL) m_specialEatNum++;
+
+                m_monsterList.removeAt(i);
+                if(m_monsterList.size()<GameGlobal::getMaxMonsterCount()/2){
+                    for(int j=m_monsterList.size();j<GameGlobal::getMaxMonsterCount();j++){
+                        spawnMonster(canvasW,canvasH);
+                    }
+                }
+
+                int randRate=RandomUtil::randInt(1,100);
+                GameGlobal::SymbiosisMode createMode;
+                if(mon.getType()==GameGlobal::ELITE&&randRate<=40)createMode=GameGlobal::SYMBIO_PERM;
+                else if(mon.getType()==GameGlobal::SPECIAL&&randRate<=60)createMode=GameGlobal::SYMBIO_ABSORB;
+                else if(randRate<=25)createMode=GameGlobal::SYMBIO_TEMP;
+                else return;
+                SymbiosisCell newSymCell;
+                newSymCell.initSymbiosis(mon.getType(),mon.getX(),mon.getY());
+                newSymCell.setSymbiosisMode(createMode);
+                newSymCell.setBornTime(now);
+                m_player.addSymbiosisCell(newSymCell);
+
+                break;
+            }
+        }
+    }
+}
+bool GameManager::rollbackTolastNode(){
+    bool ret=m_player.rollbackToLastNode();
+    if(!ret)return false;
+    GhostCell newGhost;
+    newGhost.initGhost(m_player.getX(),m_player.getY(),m_player.getSize(),m_player.getCurrentLaw());
+    newGhost.setBornTime(QDateTime::currentMSecsSinceEpoch());
+    m_ghostList.append(newGhost);
+    return true;
+}
+bool GameManager::rollbackToAssignNode(int index){
+    bool ret=m_player.rollbackToAssignNode(index);
+    if(!ret)return false;
+    GhostCell newGhost;
+    newGhost.initGhost(m_player.getX(),m_player.getY(),m_player.getSize(),m_player.getCurrentLaw());
+    newGhost.setBornTime(QDateTime::currentMSecsSinceEpoch());
+    m_ghostList.append(newGhost);
+    return true;
+}
+int GameManager::getHistoryNodeTotal()const{
+    return m_ghostList.size();
+}
+const QList<GhostCell>& GameManager::getGhostList()const{
+    return m_ghostList;
 }

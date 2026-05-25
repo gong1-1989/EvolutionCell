@@ -10,8 +10,9 @@ PlayerCell::PlayerCell()
     ,m_decomposeLv(GameGlobal::DECOMPOSE_NONE)
     ,m_currentDecomposeRisk(0)
     ,m_critBonus(0.0),m_atkBonus(0.0),m_speedLoss(0.0)
-    ,m_symbiosisCount(0),m_geneRejectValue(0)
-{}
+    ,m_symbiosisCount(0),m_geneRejectValue(0){
+    m_historyNodeList.clear();
+}
 
 void PlayerCell::move(bool w, bool a, bool s, bool d, int canvasW, int canvasH){
     qreal speed=GameGlobal::getPlayerSpeed()*getGeneSpeedRatio()-m_speedLoss;
@@ -99,6 +100,7 @@ bool PlayerCell::unlockGene(GameGlobal::GeneType type){
         if(g.getType()==type) return false;
     }
     m_unlockGene.append(Gene(type));
+    recordCurrentEvolveNode();
     return true;
 }
 void PlayerCell::applySpeedBuff(){
@@ -220,4 +222,79 @@ void PlayerCell::resetSymbiosis(){
 }
 void PlayerCell::setGenRejectValue(int value){
     m_geneRejectValue=value;
+}
+void PlayerCell::recordCurrentEvolveNode(){
+    int maxNode=GameGlobal::getMaxHistoryNode();
+    if(m_historyNodeList.size()>=maxNode){
+        m_historyNodeList.removeFirst();
+    }
+    GameGlobal::EvolveHistoryNode node;
+    node.posX=m_x;
+    node.posY=m_y;
+    node.bodySize=m_size;
+    node.currentLaw=m_lawType;
+    node.decomposeLv=m_decomposeLv;
+    node.decomposeRisk=m_currentDecomposeRisk;
+    node.geneRejectValue=m_geneRejectValue;
+    node.unlockGeneType.clear();
+    for(const auto& gene:m_unlockGene){
+        node.unlockGeneType.append(gene.getType());
+    }
+    m_historyNodeList.append(node);
+}
+bool PlayerCell::rollbackToLastNode(){
+    if(m_historyNodeList.isEmpty())return false;
+    int costRisk=GameGlobal::getRollbackCostRisk();
+    int costReject=GameGlobal::getRollbackCostReject();
+    if(m_currentDecomposeRisk<costRisk||m_geneRejectValue<costReject)return false;
+    m_currentDecomposeRisk-=costRisk;
+    m_geneRejectValue-=costReject;
+    GameGlobal::EvolveHistoryNode lastNode=m_historyNodeList.takeLast();
+    m_x=lastNode.posX;
+    m_y=lastNode.posY;
+    m_size=lastNode.bodySize;
+    m_lawType=lastNode.currentLaw;
+    m_decomposeLv=lastNode.decomposeLv;
+    m_unlockGene.clear();
+    for(int type:lastNode.unlockGeneType){
+        unlockGene(static_cast<GameGlobal::GeneType>(type));
+    }
+    return true;
+}
+bool PlayerCell::rollbackToAssignNode(int index){
+    if(m_historyNodeList.isEmpty()) return false;
+    if(index<0||index>=m_historyNodeList.size())return false;
+    int costRisk=GameGlobal::getRollbackCostRisk();
+    int costReject=GameGlobal::getRollbackCostReject();
+    if(m_currentDecomposeRisk<costRisk||m_geneRejectValue<costReject)return false;
+    m_currentDecomposeRisk-=costRisk;
+    m_geneRejectValue-=costReject;
+    GameGlobal::EvolveHistoryNode targetNode=m_historyNodeList.at(index);
+    m_x=targetNode.posX;
+    m_y=targetNode.posY;
+    m_size=targetNode.bodySize;
+    m_lawType=targetNode.currentLaw;
+    m_decomposeLv=targetNode.decomposeLv;
+    m_unlockGene.clear();
+    for(int type:targetNode.unlockGeneType){
+        unlockGene(static_cast<GameGlobal::GeneType>(type));
+    }
+    while(m_historyNodeList.size()>index+1){
+        m_historyNodeList.removeLast();
+    }
+    return true;
+}
+int PlayerCell::getHistoryNodeCount()const{
+    return m_historyNodeList.size();
+}
+GameGlobal::EvolveHistoryNode PlayerCell::getHistoryNodeByiIndex(int index) const{
+    GameGlobal::EvolveHistoryNode emptyNode;
+    if(index<0||index>=m_historyNodeList.size())return emptyNode;
+    return m_historyNodeList.at(index);
+}
+void PlayerCell::resetHistory(){
+    m_historyNodeList.clear();
+}
+void PlayerCell::setHistoryList(const GameGlobal::EvolveHistoryNode& hisNode){
+    m_historyNodeList.append(hisNode);
 }

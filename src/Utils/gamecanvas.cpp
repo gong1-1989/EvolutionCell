@@ -71,6 +71,9 @@ void GameCanvas::keyPressEvent(QKeyEvent *e){
     case Qt::Key_T:
         m_gameMgr.saveToSaveSlot();
         break;
+    case Qt::Key_R:
+        m_gameMgr.rollbackTolastNode();
+        break;
     default:
         break;
     }

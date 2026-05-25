@@ -106,6 +106,28 @@ int getNormalSymAttack();
 int getEliteSymAttack();
 int getSpecialSymAttack();
 int getSymAttackCdMs();
+
+//=======时空回溯相关======
+enum RollbackOperate{
+    ROLLBACK_LAST,
+    ROLLBACK_ASSIGN
+};
+int getMaxHistoryNode();
+int getRollbackCostRisk();
+int getRollbackCostReject();
+int getGhostLifeTime();
+qreal getGhostAttackMult();
+
+struct EvolveHistoryNode{
+    qreal posX;
+    qreal posY;
+    int bodySize;
+    GameGlobal::LifeLaw currentLaw;
+    GameGlobal::DecomposeLevel decomposeLv;
+    int decomposeRisk;
+    int geneRejectValue;
+    QList<int> unlockGeneType;
+};
 }
 
 #endif // GAMEGLOBAL_H

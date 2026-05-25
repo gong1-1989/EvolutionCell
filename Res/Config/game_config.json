@@ -32,7 +32,12 @@
         "atk_normal":1,
         "atk_elite":3,
         "atk_special":5,
-        "attack_cd":500
+        "attack_cd":500,
+        "max_history_node":8,
+        "rollback_cost_risk":5,
+        "rollback_cost_reject":5,
+        "ghost_life_time":5000,
+        "ghost_attack_mult":0.6
     }
 
 }

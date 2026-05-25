@@ -181,3 +181,23 @@ int GameGlobal::getSymAttackCdMs(){
     auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
     return obj.value("attack_cd").toInt(600);
 }
+int GameGlobal::getMaxHistoryNode(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("max_history_node").toInt(8);
+}
+int GameGlobal::getRollbackCostRisk(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("rollback_cost_risk").toInt(10);
+}
+int GameGlobal::getRollbackCostReject(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("rollback_cost_reject").toInt(15);
+}
+int GameGlobal::getGhostLifeTime(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("ghost_life_time").toInt(5000);
+}
+qreal GameGlobal::getGhostAttackMult(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("ghost_atack_mult").toDouble(0.6);
+}
