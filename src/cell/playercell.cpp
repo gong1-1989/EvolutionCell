@@ -208,9 +208,16 @@ int PlayerCell::getSymbiosisCount() const{
 const QList<SymbiosisCell>& PlayerCell::getSymbiosisList() const{
     return m_symbiosisList;
 }
-void PlayerCell::updateSymbiosisFollow(qreal playerX, qreal playerY){
-    qreal range=GameGlobal::getSymbiosisFollowRange();
-    for(auto& cell:m_symbiosisList){
-        cell.followUpdate(playerX,playerY,range);
-    }
+QList<SymbiosisCell>& PlayerCell::getMutableSymbiosisList(){
+    return m_symbiosisList;
+}
+int PlayerCell::getGeneRejectValue()const{
+    return m_geneRejectValue;
+}
+void PlayerCell::resetSymbiosis(){
+    m_symbiosisList.clear();
+    m_geneRejectValue=0;
+}
+void PlayerCell::setGenRejectValue(int value){
+    m_geneRejectValue=value;
 }

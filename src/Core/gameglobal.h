@@ -16,7 +16,11 @@ qreal getSpeedBuffMult();  //精英怪BUFF倍率
 qreal getDebuffMult();
 int getBuffDuration();       //BUFF持续时间（ms）
 //怪物配置
-enum MonsterType{NORAMAL,ELITE,SPECIAL};//怪物类型
+enum MonsterType{
+    NORAMAL,
+    ELITE,
+    SPECIAL
+};//怪物类型
 int getMaxMonsterCount();     //怪物数量上限
 int getMonMinSize();       //怪物最小尺寸
 int getMonMaxSize();      //怪物最大尺寸
@@ -38,7 +42,10 @@ const int HUD_PADDING=15;
 const QColor HUD_TEXT_COLOR=QColor(220,220,220);
 const QColor PROGRESS_BG_COLOR=QColor(60,60,80);
 const QColor PROGRESS_FG_COLOR=QColor(70,180,255);
-enum GameState{RUNING,PAUSED};
+enum GameState{
+    RUNING,
+    PAUSED
+};
 //基因系统
 enum GeneType{GENE_NONE,GENE_RANGE_EXTEND,GENE_SPEED_UP,GENE_GROW_BOOST};
 //基因解锁所需吞噬数量
@@ -93,6 +100,12 @@ int getRejectWarningThreshold();//排斥分级阈值
 int getRejectDangerThreshold();
 int getTempSymbiosisDuration(); //临时寄生持续时间（ms）
 qreal getSymbiosisFollowRange();//共生体跟随距离范围
+//共生体战斗属性
+qreal getSymAttackRange();
+int getNormalSymAttack();
+int getEliteSymAttack();
+int getSpecialSymAttack();
+int getSymAttackCdMs();
 }
 
 #endif // GAMEGLOBAL_H

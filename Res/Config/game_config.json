@@ -1,7 +1,7 @@
 {
     "player_base":{
         "move_speed":3.0,
-        "init_size":21,
+        "init_size":24,
         "max_size":80,
         "grow_ratio":4
     },
@@ -19,7 +19,7 @@
         "light_crit_gain":0.15,
         "deep_hp-loss":0.15,
         "deep_atk_gain":0.25,
-        "full_atk_gain":0.4
+        "full_atk_gain":0.6
     },
     "symbiosis_setting":{
         "max_count":6,
@@ -27,7 +27,12 @@
         "warn_threshold":25,
         "danger_threshold":50,
         "temp_duration":8000,
-        "follow_range":60.0
+        "follow_range":150.0,
+        "attack_range":30.0,
+        "atk_normal":1,
+        "atk_elite":3,
+        "atk_special":5,
+        "attack_cd":500
     }
 
 }

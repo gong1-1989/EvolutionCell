@@ -55,6 +55,7 @@ private:
     int m_specialEatNum;
 
     void updateSymbiosisSystem();
+    void checkSymbiosisAttack(int canvasW, int canvasH);
 };
 
 #endif // GAMEMANAGER_H

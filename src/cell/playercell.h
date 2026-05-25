@@ -44,7 +44,11 @@ public:
     qreal getRejectAttrModify()const;
     int getSymbiosisCount()const;
     const QList<SymbiosisCell>& getSymbiosisList()const;
-    void updateSymbiosisFollow(qreal playerX, qreal playerY);
+    QList<SymbiosisCell>& getMutableSymbiosisList();
+    int getGeneRejectValue()const;
+
+    void resetSymbiosis();
+    void setGenRejectValue(int value);
 
 private:
     qreal m_x,m_y,m_speed;

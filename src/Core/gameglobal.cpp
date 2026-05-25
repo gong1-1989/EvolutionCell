@@ -161,3 +161,23 @@ qreal GameGlobal::getSymbiosisFollowRange(){
     auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
     return obj.value("follow_range").toDouble(60.0);
 }
+qreal GameGlobal::getSymAttackRange(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("attack_range").toDouble(25.0);
+}
+int GameGlobal::getNormalSymAttack(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("atk_normal").toInt(1);
+}
+int GameGlobal::getEliteSymAttack(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("atk_elite").toInt(3);
+}
+int GameGlobal::getSpecialSymAttack(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("atk_special").toInt(5);
+}
+int GameGlobal::getSymAttackCdMs(){
+    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
+    return obj.value("attack_cd").toInt(600);
+}

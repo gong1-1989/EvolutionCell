@@ -35,14 +35,67 @@ void GameManager::frameUpdate(bool keyW, bool keyA, bool keyS, bool keyD, int ca
     updateBuffStatus();
     m_player.move(keyW,keyA,keyS,keyD,canvasW,canvasH);
 
-    m_player.updateSymbiosisFollow(m_player.getX(),m_player.getY());
+    qreal followRange=GameGlobal::getSymbiosisFollowRange();
 
+    QList<SymbiosisCell>&symList=m_player.getMutableSymbiosisList();
+    for(SymbiosisCell& sym:symList){
+        sym.followUpdate(m_player.getX(),m_player.getY(),followRange,m_monsterList);
+    }
+    checkSymbiosisAttack(canvasW,canvasH);
     for(MonsterCell &mon:m_monsterList){
         mon.move(canvasW,canvasH);
     }
     checkEat(canvasW,canvasH);
-
     updateSymbiosisSystem();
+}
+void GameManager::checkSymbiosisAttack(int canvasW, int canvasH){
+    qint64 now=QDateTime::currentMSecsSinceEpoch();
+    QList<SymbiosisCell>& symList=m_player.getMutableSymbiosisList();
+    for(int i=m_monsterList.size()-1;i>=0;--i){
+        auto&mon=m_monsterList[i];
+        bool beKilled=false;
+        for(SymbiosisCell& sym:symList){
+            if(!sym.canAttack(now)) continue;
+            if(CollisionUtil::circleCollide(sym.getX(),sym.getY(),sym.getSize()/2+5.0,
+                                             mon.getX(),mon.getY(),mon.getSize()/2+5.0)){
+                sym.onAttackTriggered(now);
+                beKilled=true;
+                break;
+            }
+        }
+        if(beKilled){
+            m_player.grow(mon.getSize()/GameGlobal::getGrowRatio(),mon.getType());
+            m_eatCount++;
+            if(mon.getType()==GameGlobal::NORAMAL) m_normalEatNum++;
+            if(mon.getType()==GameGlobal::ELITE) {
+                m_eliteEatNum++;
+                m_buffStartTime=QDateTime::currentMSecsSinceEpoch();
+                m_buffActive=true;
+            }
+            if(mon.getType()==GameGlobal::SPECIAL) m_specialEatNum++;
+            if(m_normalEatNum>=GameGlobal::getUnlockRangeNum()) m_player.unlockGene(GameGlobal::GENE_RANGE_EXTEND);
+            if(m_eliteEatNum>=GameGlobal::getUnlockSpeedNum()) m_player.unlockGene(GameGlobal::GENE_SPEED_UP);
+            if(m_specialEatNum>=GameGlobal::getUnlockGrowNum()) m_player.unlockGene(GameGlobal::GENE_GROW_BOOST);
+            m_monsterList.removeAt(i);
+            if(m_monsterList.size()<GameGlobal::getMaxMonsterCount()/2){
+                for(int j=m_monsterList.size();j<GameGlobal::getMaxMonsterCount();j++){
+                    spawnMonster(canvasW,canvasH);
+                }
+            }
+
+            int randRate=RandomUtil::randInt(1,100);
+            GameGlobal::SymbiosisMode createMode;
+            if(mon.getType()==GameGlobal::ELITE&&randRate<=40)createMode=GameGlobal::SYMBIO_PERM;
+            else if(mon.getType()==GameGlobal::SPECIAL&&randRate<=60)createMode=GameGlobal::SYMBIO_ABSORB;
+            else if(randRate<=25)createMode=GameGlobal::SYMBIO_TEMP;
+            else return;
+            SymbiosisCell newSymCell;
+            newSymCell.initSymbiosis(mon.getType(),mon.getX(),mon.getY());
+            newSymCell.setSymbiosisMode(createMode);
+            newSymCell.setBornTime(QDateTime::currentMSecsSinceEpoch());
+            m_player.addSymbiosisCell(newSymCell);
+        }
+    }
 }
 void GameManager::updateBuffStatus(){
     if(m_buffActive){
@@ -125,6 +178,20 @@ QString GameManager::saveToSaveSlot(){
     statObj["elite"]=m_eliteEatNum;
     statObj["special"]=m_specialEatNum;
     data["stat"]=statObj;
+    QJsonArray symbiosisArr;
+    const auto& symList=m_player.getSymbiosisList();
+    for(const auto& symCell:symList){
+        QJsonObject symObj;
+        symObj["mode"]=(int)symCell.getMode();
+        symObj["source_type"]=(int)symCell.getSourceType();
+        symObj["pos_x"]=symCell.getX();
+        symObj["pos_y"]=symCell.getY();
+        symObj["born_time"]=symCell.getBornTime();
+        symObj["last_attack_time"]=symCell.getLastAttackTime();
+        symbiosisArr.append(symObj);
+    }
+    data["symbiosis_list"]=symbiosisArr;
+    data["gen_reject_value"]=m_player.getGeneRejectValue();
     return SaveManager::getInstance().saveToSlot(data);
 }
 bool GameManager::loadFromSaveSlot(const QString &path){
@@ -148,6 +215,26 @@ bool GameManager::loadFromSaveSlot(const QString &path){
     m_normalEatNum=stObj["normal"].toInt();
     m_eliteEatNum=stObj["elite"].toInt();
     m_specialEatNum=stObj["special"].toInt();
+    m_player.resetSymbiosis();
+    m_player.setGenRejectValue(data.value("gene_reject_value").toInt(0));
+    QJsonArray symbiosisArr=data.value("symbiosis_list").toArray();
+    for(auto symVal:symbiosisArr){
+        QJsonObject symObj=symVal.toObject();
+        SymbiosisCell symCell;
+        int modeInt=symObj.value("mode").toInt();
+        int typeInt=symObj.value("source_type").toInt();
+        qreal x=symObj.value("pos_x").toDouble();
+        qreal y=symObj.value("pos_y").toDouble();
+        qint64 bornTime=symObj.value("born_time").toVariant().toLongLong();
+        qint64 lastAtkTime=symObj.value("last_attack_time").toVariant().toLongLong();
+        GameGlobal::SymbiosisMode mod=static_cast<GameGlobal::SymbiosisMode>(modeInt);
+        GameGlobal::MonsterType srcType=static_cast<GameGlobal::MonsterType>(typeInt);
+        symCell.initSymbiosis(srcType,x,y);
+        symCell.setSymbiosisMode(mod);
+        symCell.setBornTime(bornTime);
+        symCell.setLastAttackTime(lastAtkTime);
+        m_player.addSymbiosisCell(symCell);
+    }
     return true;
 }
 void GameManager::reserNewGame(){
@@ -159,6 +246,7 @@ void GameManager::reserNewGame(){
     m_specialEatNum=0;
     m_sceneInited=false;
     m_gameState=GameGlobal::RUNING;
+    m_player.resetSymbiosis();
 }
 int GameManager::getPlayerDecomposeRisk()const{
     return m_player.getDecomposeRisk();
