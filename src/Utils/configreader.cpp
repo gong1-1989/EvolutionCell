@@ -65,7 +65,7 @@ qreal ConfigReader::getDouble(const QJsonObject& obj, const QString& key, qreal 
 }
 
 QString ConfigReader::getString(const QJsonObject& obj,const QString& key,QString strVal)const{
-    if (!obj.contains(key) || !obj[key].isDouble())
+    if (!obj.contains(key) || !obj[key].isString())
     {
         qWarning() << "配置字段异常：" << key << "，使用默认值：" << strVal;
         return strVal;

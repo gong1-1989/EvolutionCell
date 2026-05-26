@@ -51,7 +51,7 @@ void GameManager::frameUpdate(bool keyW, bool keyA, bool keyS, bool keyD, int ca
 void GameManager::updatePlayerEntity(bool keyW, bool keyA, bool keyS, bool keyD, int canvasW, int canvasH)
 {
     m_player.move(keyW, keyA, keyS, keyD, canvasW, canvasH);
-    m_player.updateSymbiosisFollow(m_player.getX(), m_player.getY());
+    m_player.updateSymbiosisFollow(m_player.getX(), m_player.getY(),m_monsterList);
 }
 
 // ===================== 原子更新函数：怪物 =====================

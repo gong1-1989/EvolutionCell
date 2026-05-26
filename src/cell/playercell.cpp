@@ -204,12 +204,12 @@ void PlayerCell::clearAllSymbiosis()
     m_geneRejectValue = 0;
 }
 
-void PlayerCell::updateSymbiosisFollow(qreal playerX, qreal playerY)
+void PlayerCell::updateSymbiosisFollow(qreal playerX, qreal playerY, const QList<MonsterCell> &monsterList)
 {
     qreal range = GameGlobal::getSymbiosisFollowRange();
     for (auto& cell : m_symbiosisList)
     {
-        cell.update(playerX, playerY, range, QList<MonsterCell>());
+        cell.update(playerX, playerY, range, monsterList);
     }
 }
 

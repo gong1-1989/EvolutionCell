@@ -25,7 +25,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         Res.qrc
         src/Utils/collisionutil.h src/Utils/collisionutil.cpp
-
         src/Utils/gamecanvas.h src/Utils/gamecanvas.cpp
         src/Core/gameglobal.h src/Core/gameglobal.cpp
         src/Utils/randomutil.h src/Utils/randomutil.cpp
@@ -33,7 +32,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/Cell/monstercell.h src/Cell/monstercell.cpp
         src/Core/gamemanager.h src/Core/gamemanager.cpp
         src/Core/gamerender.h src/Core/gamerender.cpp
-        src/Cell/gene.h src/Cell/gene.cpp
         src/Utils/configreader.h src/Utils/configreader.cpp
         src/Utils/savemanager.h src/Utils/savemanager.cpp
         src/cell/symbiosiscell.h src/cell/symbiosiscell.cpp

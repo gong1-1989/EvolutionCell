@@ -3,6 +3,7 @@
 GameCanvas::GameCanvas(QWidget *parent)
     : QWidget(parent)
 {
+    setFixedSize(GameGlobal::getWindowWidth()-20,GameGlobal::getWindowHeight()-50);
     setFocusPolicy(Qt::StrongFocus); // 捕获键盘焦点
 
     // 1. 帧定时器 60FPS ≈ 16ms/帧

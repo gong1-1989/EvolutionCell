@@ -78,7 +78,7 @@ public:
     /**
      * @brief 驱动所有共生体跟随玩家
      */
-    void updateSymbiosisFollow(qreal playerX, qreal playerY);
+    void updateSymbiosisFollow(qreal playerX, qreal playerY, const QList<MonsterCell>& monsterList);
 
     // 共生只读查询
     int getSymbiosisCount() const;

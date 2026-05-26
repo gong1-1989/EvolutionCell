@@ -54,7 +54,7 @@ void SymbiosisCell::update(qreal playerX, qreal playerY, qreal followRange, cons
         qreal dx = nearestMon->getX() - m_pos.x();
         qreal dy = nearestMon->getY() - m_pos.y();
         qreal dist = sqrt(dx * dx + dy * dy);
-        if (dist > 0.1)
+        if (dist > 1)
         {
             m_pos.rx() += dx / dist * m_moveSpeed;
             m_pos.ry() += dy / dist * m_moveSpeed;
