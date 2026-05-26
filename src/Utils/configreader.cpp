@@ -1,32 +1,74 @@
-#include "configreader.h"
+#include "ConfigReader.h"
 
-ConfigReader& ConfigReader::getInstance() {
+ConfigReader& ConfigReader::getInstance()
+{
     static ConfigReader ins;
     return ins;
 }
-QJsonObject ConfigReader::readJsonFile(const QString &filePath){
-    QFile file(filePath);
-    if(!file.open(QIODevice::ReadOnly|QIODevice::Text)){
-        qDebug()<<"配置文件打开失败："<<filePath;
-        return QJsonObject();
+
+void ConfigReader::loadAllConfig()
+{
+    const QString cfgPath = ":/Config/Res/Config/game_config.json";
+    QFile file(cfgPath);
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qWarning() << "配置文件打开失败：" << cfgPath;
+        m_rootCfg = QJsonObject();
+        return;
     }
-    QByteArray data=file.readAll();
+
+    QByteArray data = file.readAll();
     file.close();
-    QJsonDocument doc=QJsonDocument::fromJson(data);
-    return doc.object();
+
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (doc.isNull() || !doc.isObject())
+    {
+        qWarning() << "配置文件JSON格式错误";
+        m_rootCfg = QJsonObject();
+        return;
+    }
+
+    m_rootCfg = doc.object();
+    qDebug() << "全局配置加载完成";
 }
-bool ConfigReader::loadAllConfig(){
-    m_gameObj=readJsonFile(":/Config/Res/Config/game_config.json");
-    m_monsterObj=readJsonFile(":/Config/Res/Config/monster_config.json");
-    m_geneObj=readJsonFile(":/Config/Res/Config/gene_config.json");
-    return !m_gameObj.isEmpty()&&!m_monsterObj.isEmpty()&&!m_geneObj.isEmpty();
+
+void ConfigReader::reloadAllConfig()
+{
+    loadAllConfig();
+    qDebug() << "配置热重载完成";
 }
-QJsonObject ConfigReader::getGemeConfig()const{
-    return m_gameObj;
+
+QJsonObject ConfigReader::getRootConfig() const
+{
+    return m_rootCfg;
 }
-QJsonObject ConfigReader::getMonsterConfig()const{
-    return m_monsterObj;
+
+int ConfigReader::getInt(const QJsonObject& obj, const QString& key, int defVal) const
+{
+    if (!obj.contains(key) || !obj[key].isDouble())
+    {
+        qWarning() << "配置字段异常：" << key << "，使用默认值：" << defVal;
+        return defVal;
+    }
+    return obj[key].toInt(defVal);
 }
-QJsonObject ConfigReader::getGeneConfig()const{
-    return m_geneObj;
+
+qreal ConfigReader::getDouble(const QJsonObject& obj, const QString& key, qreal defVal) const
+{
+    if (!obj.contains(key) || !obj[key].isDouble())
+    {
+        qWarning() << "配置字段异常：" << key << "，使用默认值：" << defVal;
+        return defVal;
+    }
+    return obj[key].toDouble(defVal);
+}
+
+QString ConfigReader::getString(const QJsonObject& obj,const QString& key,QString strVal)const{
+    if (!obj.contains(key) || !obj[key].isDouble())
+    {
+        qWarning() << "配置字段异常：" << key << "，使用默认值：" << strVal;
+        return strVal;
+    }
+    return obj[key].toString(strVal);
 }

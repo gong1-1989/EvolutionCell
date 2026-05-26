@@ -1,166 +1,146 @@
-#include "gamerender.h"
+#include "GameRender.h"
 
-void GameRender::drawAll(QPainter *p, const GameManager &gameMgr, const QRect &canvasRect){
-    p->setRenderHint(QPainter::Antialiasing);
-    p->fillRect(canvasRect,QColor(18,22,35));//画布背景深色
-    auto& monList=gameMgr.getMonsterList();
-    for(const MonsterCell &m:monList){
-        p->setBrush(m.getColor());
-        if(m.getType()==GameGlobal::NORAMAL){
-            p->setPen(Qt::NoPen);
-        }else if(m.getType()==GameGlobal::ELITE){
-            p->setPen(QPen(QColor(255,215,0),2));
+void GameRender::drawCircleCell(QPainter* painter, qreal x, qreal y, int size, const QColor& color, bool transparent)
+{
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing); // 抗锯齿
 
-        }else if(m.getType()==GameGlobal::SPECIAL){
-            p->setPen(QPen(QColor(138,43,226),1));
-        }
-        p->drawEllipse(m.getX()-m.getSize()/2,m.getY()-m.getSize()/2,m.getSize(),m.getSize());
+    QBrush brush(color);
+    QPen pen(Qt::transparent); // 默认无边框
+
+    // 残影/半透明实体关闭描边，普通实体白色细边框
+    if (!transparent)
+        pen = QPen(Qt::white, 1);
+
+    painter->setBrush(brush);
+    painter->setPen(pen);
+    painter->drawEllipse(x - size/2.0, y - size/2.0, size, size);
+    painter->restore();
+}
+
+void GameRender::drawBackground(QPainter* painter, int canvasW, int canvasH)
+{
+    painter->fillRect(0, 0, canvasW, canvasH, QColor(20, 25, 35));
+}
+
+void GameRender::drawMonster(QPainter* painter)
+{
+    GameManager& mgr = GameManager::getInstance();
+    // 【合规】调用公有只读接口，不访问私有成员
+    const QList<MonsterCell>& monsterList = mgr.getMonsterList();
+
+    for (const auto& mon : monsterList)
+    {
+        drawCircleCell(painter, mon.getX(), mon.getY(), mon.getSize(), mon.getColor());
     }
-    auto& player=gameMgr.getPlayer();
-    GameGlobal::LifeLaw law=gameMgr.getPlayerLawType();
+}
+
+void GameRender::drawSymbiosis(QPainter* painter)
+{
+    GameManager& mgr = GameManager::getInstance();
+    const QList<SymbiosisCell>& symList = mgr.getSymbiosisList();
+    for (const auto& sym : symList)
+    {
+        drawCircleCell(painter, sym.getX(), sym.getY(), sym.getSize(), sym.getColor());
+    }
+}
+
+void GameRender::drawGhost(QPainter* painter)
+{
+    GameManager& mgr = GameManager::getInstance();
+    const QList<GhostCell>& ghostList = mgr.getGhostList();
+    for (const auto& ghost : ghostList)
+    {
+        // 残影标记为半透明绘制
+        drawCircleCell(painter, ghost.getX(), ghost.getY(), ghost.getSize(), ghost.getColor(), true);
+    }
+}
+
+void GameRender::drawPlayer(QPainter* painter)
+{
+    GameManager& mgr = GameManager::getInstance();
+    // 【合规】调用公有只读接口
+    const PlayerCell& player = mgr.getPlayer();
+
+    // 玩家主体配色（按生命法则区分）
     QColor playerColor;
-    switch (law) {
-    case GameGlobal::LAW_FISSION:
-        playerColor=QColor(255,42,42);
-        break;
-    case GameGlobal::LAW_SYMBIOSIS:
-        playerColor=QColor(42,209,104);
-        break;
-    case GameGlobal::LAW_ILLUSION:
-        playerColor=QColor(123,42,209);
-        break;
-    default:
-        playerColor=QColor(255,70,70);
-        break;
-    }
-    p->setBrush(playerColor);
-    p->setPen(Qt::NoPen);
-    p->drawEllipse(player.getX()-player.getSize()/2,player.getY()-player.getSize()/2,player.getSize(),player.getSize());
-    if(!player.hasSpeedBuff()) {
-        p->setPen(Qt::NoPen);
-    }
-    else {
-        p->setPen(QPen(QColor(255,100,100),3));
-    }
-    p->drawEllipse(player.getX()-player.getSize()/2-2
-                   ,player.getY()-player.getSize()/2-2
-                   ,player.getSize()+4,player.getSize()+4);
-
-    auto&symList=gameMgr.getSymbiosisList();
-    for(const auto& symCell:symList){
-        p->setBrush(symCell.getColor());
-        p->setPen(Qt::white);
-        int sz=symCell.getSize();
-        p->drawEllipse(symCell.getX()-sz/2,symCell.getY()-sz/2,sz,sz);
+    switch (player.getLawType())
+    {
+    case GameGlobal::LAW_FISSION:    playerColor = QColor(255, 60, 60); break;
+    case GameGlobal::LAW_SYMBIOSIS:  playerColor = QColor(60, 255, 100); break;
+    case GameGlobal::LAW_ILLUSION:   playerColor = QColor(120, 60, 255); break;
+    default: playerColor = QColor(255,255,255); break;
     }
 
-    const QList<GhostCell>& ghostList=gameMgr.getGhostList();
-    for(const GhostCell& ghost:ghostList){
-        p->setBrush(ghost.getColor());
-        p->setPen(Qt::transparent);
-        int sz=ghost.getSize();
-        p->drawEllipse(ghost.getX()-sz/2,ghost.getY()-sz/2,sz,sz);
-    }
-    //==========绘制HUD==========
-    int hudX=GameGlobal::HUD_PADDING;
-    int hudY=GameGlobal::HUD_PADDING;
-    p->setPen(GameGlobal::HUD_TEXT_COLOR);
-    QString lawText;
-    switch (law) {
-    case GameGlobal::LAW_FISSION:
-        lawText="当前法则：裂变解构";
-        break;
-    case GameGlobal::LAW_SYMBIOSIS:
-        lawText="当前法则：菌群共生";
-        break;
-    case GameGlobal::LAW_ILLUSION:
-        lawText="当前法则：时空虚妄";
-        break;
-    default:
-        break;
-    }
-    p->drawText(hudX+80,hudY+30,lawText);
+    drawCircleCell(painter, player.getX(), player.getY(), player.getSize(), playerColor);
+}
 
-    QString decText;
-    auto decompLv=gameMgr.getplayerDecomposeLv();
-    switch (decompLv) {
-    case GameGlobal::DECOMPOSE_NONE:
-        decText="躯体状态：原生形态";
-        break;
-    case GameGlobal::DECOMPOSE_LIGHT:
-        decText="躯体状态：微拆解蜕变";
-        break;
-    case GameGlobal::DECOMPOSE_DEEP:
-        decText="躯体状态：深度解构";
-        break;
-    case GameGlobal::DECOMPOSE_FULL:
-        decText="躯体状态：完全重构";
-        break;
-    default:
-        break;
-    }    
-    p->drawText(hudX+80,hudY+50,decText);
+void GameRender::drawHUD(QPainter* painter)
+{
+    GameManager& mgr = GameManager::getInstance();
+    painter->save();
+    painter->setPen(Qt::white);
+    painter->setFont(QFont("Microsoft YaHei", 10));
 
-    int symNum=gameMgr.getPlayerSymbiosisNum();
-    QString symText=QString("共生菌体数量：%1/%2").arg(symNum).arg(GameGlobal::getMaxSymbiosisCount());
-    p->drawText(hudX+180,hudY+35,symText);
+    int offsetY = GameGlobal::Const::HUD_TEXT_OFFSET_Y;
+    int baseX = 10;
+
+    // 1. 基础状态
+    painter->drawText(baseX, offsetY, QString("吞噬总数：%1").arg(mgr.getEatTotal()));
+    offsetY += 20;
+
+    // 2. 共生体数量
+    int symNum = mgr.getPlayerSymbiosisNum();
+    int maxSym = GameGlobal::getMaxSymbiosisCount();
+    painter->drawText(baseX, offsetY, QString("共生体：%1 / %2").arg(symNum).arg(maxSym));
+    offsetY += 20;
+
+    // 3. 基因排斥状态
     QString rejectText;
-    QColor rejectColeor;
-    auto rejectLv=gameMgr.getPlayerRejectLevel();
-    switch (rejectLv) {
-    case GameGlobal::REJECT_SAFE:
-        rejectText="基因状态：稳定安全";
-        rejectColeor=QColor(80,220,80);
-        break;
-    case GameGlobal::REJECT_WARNING:
-        rejectText="基因状态：轻度排斥";
-        rejectColeor=QColor(220,180,60);
-        break;
-    case GameGlobal::REJECT_DANGER:
-        rejectText="基因状态：高危紊乱";
-        rejectColeor=QColor(220,60,60);
-        break;
+    switch (mgr.getPlayerRejectLevel())
+    {
+    case GameGlobal::REJECT_SAFE:     rejectText = "基因状态：正常"; break;
+    case GameGlobal::REJECT_WARNING:  rejectText = "基因状态：轻度排斥"; break;
+    case GameGlobal::REJECT_DANGER:   rejectText = "基因状态：高危紊乱"; break;
     }
-    p->setPen(rejectColeor);
-    p->drawText(hudX+180,hudY,rejectText);
+    painter->drawText(baseX, offsetY, rejectText);
+    offsetY += 20;
 
-    QString riskText=QString("躯体畸变风险值：%1").arg(gameMgr.getPlayerDecomposeRisk());
-    p->setPen(QColor(255,120,120));
-    p->drawText(hudX+80,hudY+70,riskText);
-    p->setPen(Qt::NoPen);
-    p->setBrush(GameGlobal::PROGRESS_BG_COLOR);
-    p->drawRect(hudX,hudY,GameGlobal::HUD_BAR_WIDTH,GameGlobal::HUD_BAR_HEIFHT);
-    qreal progress=(qreal)player.getSize()/GameGlobal::getPlayerMaxSize();
-    p->setBrush(GameGlobal::PROGRESS_FG_COLOR);
-    p->drawRect(hudX,hudY,GameGlobal::HUD_BAR_WIDTH*progress,GameGlobal::HUD_BAR_HEIFHT);
-    p->setPen(GameGlobal::HUD_TEXT_COLOR);
-    p->drawText(hudX,hudY-5,QString("体型：%1/%2").arg(player.getSize()).arg(GameGlobal::getPlayerMaxSize()));
-    int eatX=canvasRect.width()-GameGlobal::HUD_PADDING-80;
-    int eatY=GameGlobal::HUD_PADDING+20;
-    p->drawText(eatX,eatY,QString("吞噬：%1").arg(gameMgr.getEacCount()));
-    if(player.hasSpeedBuff()){
-        p->setPen(QColor(255,100,100));
-        p->drawText(hudX,hudY+GameGlobal::HUD_BAR_HEIFHT+15,"⚡速度提升中！");
+    // 4. 时空节点 & 残影
+    int nodeCnt = mgr.getHistoryNodeTotal();
+    int maxNode = GameGlobal::getMaxHistoryNode();
+    painter->drawText(baseX, offsetY, QString("演化节点：%1 / %2").arg(nodeCnt).arg(maxNode));
+    offsetY += 20;
+
+    int ghostCnt = mgr.getGhostCount();
+    painter->drawText(baseX, offsetY, QString("时空残影：%1 个").arg(ghostCnt));
+    offsetY += 20;
+
+    //5.拟态状态显示
+    QString mimicText;
+    switch (mgr.getPlayerMimicStable()) {
+    case GameGlobal::MIMIC_NONE: mimicText="拟态：无";break;
+    case GameGlobal::MIMIC_ENV: mimicText="拟态：环境伪装";break;
+    case GameGlobal::MIMIC_MONSTER: mimicText="拟态：怪物伪装";break;
+    case GameGlobal::MIMIC_VOID: mimicText="拟态：虚空无敌";break;
     }
-    //=====绘制已解锁基因
-    int geneY=hudY+GameGlobal::HUD_BAR_HEIFHT+40;
-    p->setPen(QColor(100,200,255));
-    p->drawText(hudX,geneY,"已解锁基因：");
-    const auto& geneList=gameMgr.getPlayer().getUnlockedGene();
-    int offsetY=20;
-    for(const auto& gene:geneList){
-        p->setPen(GameGlobal::HUD_TEXT_COLOR);
-        p->drawText(hudX+10,geneY+offsetY,gene.getName());
-        offsetY+=18;
-    }
-    //=====绘制暂停界面
-    if(gameMgr.getGameState()==GameGlobal::PAUSED){
-        p->setBrush(QColor(0,0,0,180));
-        p->drawRect(canvasRect);
-        p->setPen(QColor(255,255,255));
-        p->setFont(QFont("Arial",24,QFont::Bold));
-        p->drawText(canvasRect.center().x()-60,canvasRect.center().y()-20,"游戏暂停");
-        p->setFont(QFont("Arial",12));
-        p->drawText(canvasRect.center().x()-65,canvasRect.center().y()+20,"按ESC继续游戏|按T键快捷存档");
-    }
+    painter->drawText(baseX,offsetY,mimicText);
+    offsetY+=20;
+
+    //6.基因稳定度显示
+    QString geneStableText=QString("基因稳定度：%1%").arg(mgr.getPlayerGeneStable());
+    painter->drawText(baseX,offsetY,geneStableText);
+
+    painter->restore();
+}
+
+void GameRender::renderAll(QPainter* painter, int canvasW, int canvasH)
+{
+    // 严格按层级顺序绘制
+    drawBackground(painter, canvasW, canvasH);
+    drawMonster(painter);
+    drawSymbiosis(painter);
+    drawGhost(painter);
+    drawPlayer(painter);
+    drawHUD(painter);
 }

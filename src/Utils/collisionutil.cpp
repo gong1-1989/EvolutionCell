@@ -1,9 +1,9 @@
-#include "collisionutil.h"
-#include <cmath>
-bool CollisionUtil::isRectCollide(const QRectF &a, const QRectF &b){
-    return a.intersects(b);
-}
-bool CollisionUtil::circleCollide(qreal x1, qreal y1, int r1, qreal x2, qreal y2, int r2){
-    qreal distance=hypot(x1-x2,y1-y2);
-    return distance<(r1+r2);
+#include "CollisionUtil.h"
+
+bool CollisionUtil::circleCollision(qreal x1, qreal y1, qreal r1, qreal x2, qreal y2, qreal r2)
+{
+    qreal dx = x1 - x2;
+    qreal dy = y1 - y2;
+    qreal r = r1 + r2;
+    return (dx*dx+dy*dy) <= (r * r);
 }

@@ -5,6 +5,9 @@
 #include <QTableWidgetItem>
 #include <QMenu>
 #include "Utils/savemanager.h"
+#include "Utils/gamecanvas.h"
+#include <QMessageBox>
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;

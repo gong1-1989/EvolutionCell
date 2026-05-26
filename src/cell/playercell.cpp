@@ -1,300 +1,443 @@
-#include "playercell.h"
-#include "Utils/randomutil.h"
+#include "PlayerCell.h"
+
 PlayerCell::PlayerCell()
-    :m_x(0),m_y(0)
-    ,m_size(GameGlobal::getPlayerInitSize())
-    ,m_speed(GameGlobal::getPlayerSpeed())
-    ,m_hasSpeedBuff(false)
-    ,m_hasSpeedDebuff(false)
-    ,m_lawType(GameGlobal::LAW_FISSION)
-    ,m_decomposeLv(GameGlobal::DECOMPOSE_NONE)
-    ,m_currentDecomposeRisk(0)
-    ,m_critBonus(0.0),m_atkBonus(0.0),m_speedLoss(0.0)
-    ,m_symbiosisCount(0),m_geneRejectValue(0){
+    : m_pos(0, 0)
+    , m_size(GameGlobal::getPlayerInitSize())
+    , m_lawType(GameGlobal::LAW_FISSION)
+    , m_decomposeLv(GameGlobal::DECOMPOSE_NONE)
+    , m_currentDecomposeRisk(0)
+    , m_geneRejectValue(0)
+    , m_mimicState(GameGlobal::MIMIC_NONE)
+    ,m_mimicEndTime(0)
+    ,m_mimicCoolDown(3000)
+    ,m_geneStableValue(100)
+    ,m_geneStableState(GameGlobal::STABLE_SAFE)
+{
+    m_unlockGene.clear();
+    m_symbiosisList.clear();
     m_historyNodeList.clear();
 }
 
-void PlayerCell::move(bool w, bool a, bool s, bool d, int canvasW, int canvasH){
-    qreal speed=GameGlobal::getPlayerSpeed()*getGeneSpeedRatio()-m_speedLoss;
-    if(m_hasSpeedBuff)  speed*=GameGlobal::getSpeedBuffMult();
-    if(m_hasSpeedDebuff) speed*=GameGlobal::getDebuffMult();
-    if(w) m_y-=speed;
-    if(s) m_y+=speed;
-    if(a) m_x-=speed;
-    if(d) m_x+=speed;
-    int half=m_size/2;
-    m_x=qBound((qreal)half,m_x,(qreal)canvasW-half);
-    m_y=qBound((qreal)half,m_y,(qreal)canvasH-half);
+// ===================== 基础移动 =====================
+void PlayerCell::move(bool keyW, bool keyA, bool keyS, bool keyD, int canvasW, int canvasH)
+{
+    qreal speed = GameGlobal::getPlayerSpeed();
+    qreal dx = 0, dy = 0;
+
+    if (keyW) dy -= speed;
+    if (keyS) dy += speed;
+    if (keyA) dx -= speed;
+    if (keyD) dx += speed;
+
+    // 归一化，防止斜向加速
+    if (dx != 0 && dy != 0)
+    {
+        double ratio = 1.0 / sqrt(dx * dx + dy * dy);
+        dx *= ratio * speed;
+        dy *= ratio * speed;
+    }
+
+    // 位置更新
+    m_pos.rx() += dx;
+    m_pos.ry() += dy;
+
+    // 边界限制
+    int halfSize = m_size / 2;
+    if (m_pos.x() - halfSize < 0) m_pos.setX(halfSize);
+    if (m_pos.x() + halfSize > canvasW) m_pos.setX(canvasW - halfSize);
+    if (m_pos.y() - halfSize < 0) m_pos.setY(halfSize);
+    if (m_pos.y() + halfSize > canvasH) m_pos.setY(canvasH - halfSize);
 }
 
-void PlayerCell::grow(int addSize, GameGlobal::MonsterType type){
-    int realAdd=addSize*getGeneGrowRatio();
-    switch (type) {
-    case GameGlobal::NORAMAL:
-        m_size+=realAdd;
-        break;
-    case GameGlobal::ELITE:
-        m_size+=realAdd*2;
-        applySpeedBuff();
-        break;
-    case GameGlobal::SPECIAL:
-        if(RandomUtil::randInt(0,1)==0){
-            m_size+=realAdd/2;
-            applySpeedDebuff();
-        }else{
-            m_size+=realAdd/4;
-        }
-        break;
-    default:
-        break;
-    }
-    if(m_size>GameGlobal::getPlayerMaxSize()) m_size=GameGlobal::getPlayerMaxSize();
+void PlayerCell::grow(int addSize, GameGlobal::MonsterType type)
+{
+    int maxSize = GameGlobal::getPlayerMaxSize();
+    m_size += addSize;
+    if (m_size > maxSize)
+        m_size = maxSize;
 }
-void PlayerCell::initLifeLaw(GameGlobal::LifeLaw law){
-    m_lawType=law;
-    m_critBonus=0.0;
-    m_atkBonus=0.0;
-    m_speedLoss=0.0;
-    switch(law){
-    case GameGlobal::LAW_FISSION:
-        //裂变”初始攻击小幅加成
-        m_atkBonus+=0.12;
-        break;
-    case GameGlobal::LAW_SYMBIOSIS:
-        //共生：无初始损耗，偏向生存
-        m_symbiosisCount=0;
-        break;
-    case GameGlobal::LAW_ILLUSION:
-        //虚妄：初始暴击加成，移速小幅优势
-        m_critBonus+=0.15;
-        break;
-    }
+
+// ===================== 躯体解构系统 =====================
+void PlayerCell::executeDecompose(GameGlobal::DecomposeLevel lv)
+{
+    if (m_decomposeLv >= lv)
+        return;
+
+    int risk = GameGlobal::getDecomposeRisk(lv);
+    addDecomposeRisk(risk);
+    m_decomposeLv = lv;
 }
-bool PlayerCell::doDecompose(GameGlobal::DecomposeLevel targetLv){
-    //规则1：只能逐级加深拆解，不能降级复原（策划取舍不可逆）
-    if(targetLv<=m_decomposeLv)return false;
-    int newRisk=GameGlobal::getDecomposerRisk(targetLv);
-    m_currentDecomposeRisk+=newRisk;
-    switch(targetLv){        
-        case GameGlobal::DECOMPOSE_LIGHT:
-            m_speedLoss+=GameGlobal::getLightDocmposeSpeedLoss();
-            m_critBonus+=GameGlobal::getLightDocmposeCritGain();
-            break;
-        case GameGlobal::DECOMPOSE_DEEP:
-            m_speedLoss+=GameGlobal::getDeepDocmposeHPLoss();
-            m_atkBonus+=GameGlobal::getDeepDocmposeAtkGain();
-            break;
-        case GameGlobal::DECOMPOSE_FULL:
-            m_atkBonus+=GameGlobal::getFullDocmposeExtremeAt();
-            break;
-        default:
+
+GameGlobal::DecomposeLevel PlayerCell::getDecomposeLevel() const
+{
+    return m_decomposeLv;
+}
+
+int PlayerCell::getDecomposeRisk() const
+{
+    return m_currentDecomposeRisk;
+}
+
+void PlayerCell::addDecomposeRisk(int val)
+{
+    m_currentDecomposeRisk += val;
+}
+
+// ===================== 基因系统 =====================
+bool PlayerCell::unlockGene(GameGlobal::GeneType type)
+{
+    // 重复解锁直接返回
+    for (auto t : m_unlockGene)
+    {
+        if (t == type)
             return false;
-            break;
     }
-    m_decomposeLv=targetLv;
-    return true;
-}
-
-bool PlayerCell::unlockGene(GameGlobal::GeneType type){
-    for(auto&g:m_unlockGene){
-        if(g.getType()==type) return false;
-    }
-    m_unlockGene.append(Gene(type));
+    m_unlockGene.append(type);
+    // 解锁新基因自动记录演化节点
     recordCurrentEvolveNode();
     return true;
 }
-void PlayerCell::applySpeedBuff(){
-    m_hasSpeedBuff=true;
-}
-qreal PlayerCell::getGeneGrowRatio()const{
-    for(auto& g:m_unlockGene){
-        if(g.getType()==GameGlobal::GENE_GROW_BOOST) return GameGlobal::getGeneGrowRatio();
-    }
-    return 1.0;
-}
-qreal PlayerCell::getGeneSpeedRatio()const{
-    for(auto& g:m_unlockGene){
-        if(g.getType()==GameGlobal::GENE_SPEED_UP) return GameGlobal::getGenespeedRatio();
-    }
-    return 1.0;
-}
-qreal PlayerCell::getGeneRangeRatio()const{
-    for(auto& g:m_unlockGene){
-        if(g.getType()==GameGlobal::GENE_RANGE_EXTEND) return GameGlobal::getGeneRangeRatio();
-    }
-    return 1.0;
-}
-const QList<Gene>& PlayerCell::getUnlockedGene() const{
+
+const QList<GameGlobal::GeneType>& PlayerCell::getUnlockedGene() const
+{
     return m_unlockGene;
 }
 
-void PlayerCell::applySpeedDebuff(){
-    m_hasSpeedDebuff=true;
+//====================== 拟态伪装系统实现 ========================
+void PlayerCell::startMimic(GameGlobal::MimicState mimicType, qint64 lastTime){
+    //拟态冷却中无法启动
+    if(isInMimc()) return;
+    //设置拟态状态
+    m_mimicState=mimicType;
+    //计算结束时间
+    m_mimicEndTime=QDateTime::currentMSecsSinceEpoch()+lastTime;
 }
-void PlayerCell::clearTempEffect(){
-    m_hasSpeedBuff=m_hasSpeedDebuff=false;
+
+void PlayerCell::stopMimic(){
+    m_mimicState=GameGlobal::MIMIC_NONE;
+    m_mimicEndTime=0;
 }
-bool PlayerCell::hasSpeedBuff()const{
-    return m_hasSpeedBuff;
+
+void PlayerCell::updateMimic(qint64 nowTime){
+    //无拟态直接返回
+    if(m_mimicState==GameGlobal::MIMIC_NONE) return;
+    //拟态超时自动关闭
+    if(nowTime>=m_mimicEndTime) stopMimic();
 }
-qreal PlayerCell::getX()const{
-    return m_x;
+
+GameGlobal::MimicState PlayerCell::getMimicState()const{
+    return m_mimicState;
 }
-qreal PlayerCell::getY()const{
-    return m_y;
+
+bool PlayerCell::isInMimc()const{
+    return m_mimicState!=GameGlobal::MIMIC_NONE&&m_mimicEndTime>QDateTime::currentMSecsSinceEpoch();
 }
-int PlayerCell::getSize()const{
-    return m_size;
-}
-void PlayerCell::setPos(qreal x, qreal y){
-    m_x=x;
-    m_y=y;
-}
-qreal PlayerCell::getCritBonus()const{
-    return m_critBonus;
-}
-qreal PlayerCell::getAttackBouns()const{
-    return m_atkBonus;
-}
-qreal PlayerCell::getSpeedModify()const{
-    return -m_speedLoss;
-}
-GameGlobal::LifeLaw PlayerCell::getCurrentLaw()const{
-    return m_lawType;
-}
-GameGlobal::DecomposeLevel PlayerCell::getDecomposeLevel()const{
-    return m_decomposeLv;
-}
-int PlayerCell::getDecomposeRisk()const{
-    return m_currentDecomposeRisk;
-}
-bool PlayerCell::addSymbiosisCell(const SymbiosisCell &cell){
-    int maxCount=GameGlobal::getMaxSymbiosisCount();
-    if(m_symbiosisList.size()>=maxCount)return false;
-    m_symbiosisList.append(cell);
-    m_geneRejectValue+=GameGlobal::getSingleRejectValue();
+
+//==================== 基因熵变系统实现 ======================
+bool PlayerCell::triggerGeneChao(){
+    //稳定度不足，无法触发
+    if(m_geneRejectValue<30) return false;
+    //扣除稳定度（熵变代价）
+    m_geneRejectValue-=30;
+    //随机触发属性波动（核心熵变逻辑）
+    int randVal=RandomUtil::randInt(1,100);
+    if(randVal<=40){
+        //正向畸变：体系变大
+        grow(5,GameGlobal::NORMAL);
+    }else if(randVal<=70){
+        //中性畸变：无变化
+    }else{
+        //负向畸变：体型减少
+        m_size=qMax(GameGlobal::getPlayerInitSize(),m_size-5);
+    }
+    //更新基因稳定状态
+    if(m_geneStableValue>=70) m_geneStableState=GameGlobal::STABLE_SAFE;
+    else if(m_geneStableValue>=30) m_geneStableState=GameGlobal::STABLE_WARN;
+    else m_geneStableState=GameGlobal::STABLE_DANGER;
     return true;
 }
-void PlayerCell::clealExpiredSymbiosis(qint64 nowTime){
-    for(int i=m_symbiosisList.size()-1;i>=0;--i){
-        if(m_symbiosisList[i].isTempExpired(nowTime)){
-            m_geneRejectValue-=GameGlobal::getSingleRejectValue();
+
+void PlayerCell::repairGeneStable(int addVal){
+    m_geneStableValue=qMin(100,m_geneStableValue+addVal);
+    //重新计算基因稳定状态
+    if(m_geneStableValue>=70) m_geneStableState=GameGlobal::STABLE_SAFE;
+    else if(m_geneStableValue>=30) m_geneStableState=GameGlobal::STABLE_WARN;
+    else m_geneStableState=GameGlobal::STABLE_DANGER;
+}
+
+int PlayerCell::getGeneStableValue()const{
+    return m_geneStableValue;
+}
+
+GameGlobal::GeneStableState PlayerCell::getGeneStableState()const{
+    return m_geneStableState;
+}
+
+// ===================== 共生体系 =====================
+bool PlayerCell::addSymbiosis(const SymbiosisCell& cell)
+{
+    int maxCnt = GameGlobal::getMaxSymbiosisCount();
+    if (m_symbiosisList.size() >= maxCnt)
+        return false;
+
+    m_symbiosisList.append(cell);
+    addGeneReject(GameGlobal::getSingleRejectValue());
+    return true;
+}
+
+void PlayerCell::clearExpiredSymbiosis(qint64 nowTime)
+{
+    // 倒序遍历，删除元素不打乱下标
+    for (int i = m_symbiosisList.size() - 1; i >= 0; --i)
+    {
+        if (m_symbiosisList[i].isTempExpired(nowTime))
+        {
+            subGeneReject(GameGlobal::getSingleRejectValue());
             m_symbiosisList.removeAt(i);
         }
     }
 }
-GameGlobal::RejectLevel PlayerCell::getcurrentRejectLevel()const{
-    int warnLimit=GameGlobal::getRejectWarningThreshold();
-    int dangerLimit=GameGlobal::getRejectDangerThreshold();
-    if(m_geneRejectValue>=dangerLimit)return GameGlobal::REJECT_DANGER;
-    else if(m_geneRejectValue>=warnLimit)return GameGlobal::REJECT_WARNING;
-    return GameGlobal::REJECT_SAFE;
+
+void PlayerCell::clearAllSymbiosis()
+{
+    m_symbiosisList.clear();
+    m_geneRejectValue = 0;
 }
-qreal PlayerCell::getRejectAttrModify()const{
-    auto level=getcurrentRejectLevel();
-    switch (level) {
-    case GameGlobal::REJECT_WARNING:
-        return 0.85;
-        break;
-    case GameGlobal::REJECT_DANGER:
-        return 0.6;
-        break;
-    default:
-        return 1.0;
-        break;
+
+void PlayerCell::updateSymbiosisFollow(qreal playerX, qreal playerY)
+{
+    qreal range = GameGlobal::getSymbiosisFollowRange();
+    for (auto& cell : m_symbiosisList)
+    {
+        cell.update(playerX, playerY, range, QList<MonsterCell>());
     }
 }
-int PlayerCell::getSymbiosisCount() const{
+
+int PlayerCell::getSymbiosisCount() const
+{
     return m_symbiosisList.size();
 }
-const QList<SymbiosisCell>& PlayerCell::getSymbiosisList() const{
+
+const QList<SymbiosisCell>& PlayerCell::getSymbiosisList() const
+{
     return m_symbiosisList;
 }
-QList<SymbiosisCell>& PlayerCell::getMutableSymbiosisList(){
-    return m_symbiosisList;
-}
-int PlayerCell::getGeneRejectValue()const{
+
+int PlayerCell::getGeneRejectValue() const
+{
     return m_geneRejectValue;
 }
-void PlayerCell::resetSymbiosis(){
-    m_symbiosisList.clear();
-    m_geneRejectValue=0;
+
+void PlayerCell::setGeneRejectValue(int val)
+{
+    m_geneRejectValue = val;
 }
-void PlayerCell::setGenRejectValue(int value){
-    m_geneRejectValue=value;
+
+void PlayerCell::addGeneReject(int val)
+{
+    m_geneRejectValue += val;
 }
-void PlayerCell::recordCurrentEvolveNode(){
-    int maxNode=GameGlobal::getMaxHistoryNode();
-    if(m_historyNodeList.size()>=maxNode){
+
+void PlayerCell::subGeneReject(int val)
+{
+    m_geneRejectValue -= val;
+    if (m_geneRejectValue < 0)
+        m_geneRejectValue = 0;
+}
+
+GameGlobal::RejectLevel PlayerCell::getCurrentRejectLevel() const
+{
+    int warn = GameGlobal::getRejectWarningThreshold();
+    int danger = GameGlobal::getRejectDangerThreshold();
+    if (m_geneRejectValue >= danger) return GameGlobal::REJECT_DANGER;
+    if (m_geneRejectValue >= warn)  return GameGlobal::REJECT_WARNING;
+    return GameGlobal::REJECT_SAFE;
+}
+
+// ===================== 时空回溯 历史节点 =====================
+void PlayerCell::recordCurrentEvolveNode()
+{
+    int maxNode = GameGlobal::getMaxHistoryNode();
+    if (m_historyNodeList.size() >= maxNode)
         m_historyNodeList.removeFirst();
-    }
+
     GameGlobal::EvolveHistoryNode node;
-    node.posX=m_x;
-    node.posY=m_y;
-    node.bodySize=m_size;
-    node.currentLaw=m_lawType;
-    node.decomposeLv=m_decomposeLv;
-    node.decomposeRisk=m_currentDecomposeRisk;
-    node.geneRejectValue=m_geneRejectValue;
+    node.posX           = m_pos.x();
+    node.posY           = m_pos.y();
+    node.bodySize       = m_size;
+    node.currentLaw     = m_lawType;
+    node.decomposeLv    = m_decomposeLv;
+    node.decomposeRisk  = m_currentDecomposeRisk;
+    node.geneRejectValue= m_geneRejectValue;
+
     node.unlockGeneType.clear();
-    for(const auto& gene:m_unlockGene){
-        node.unlockGeneType.append(gene.getType());
-    }
+    for (auto t : m_unlockGene)
+        node.unlockGeneType.append((int)t);
+
     m_historyNodeList.append(node);
 }
-bool PlayerCell::rollbackToLastNode(){
-    if(m_historyNodeList.isEmpty())return false;
-    int costRisk=GameGlobal::getRollbackCostRisk();
-    int costReject=GameGlobal::getRollbackCostReject();
-    if(m_currentDecomposeRisk<costRisk||m_geneRejectValue<costReject)return false;
-    m_currentDecomposeRisk-=costRisk;
-    m_geneRejectValue-=costReject;
-    GameGlobal::EvolveHistoryNode lastNode=m_historyNodeList.takeLast();
-    m_x=lastNode.posX;
-    m_y=lastNode.posY;
-    m_size=lastNode.bodySize;
-    m_lawType=lastNode.currentLaw;
-    m_decomposeLv=lastNode.decomposeLv;
+
+bool PlayerCell::rollbackToLastNode()
+{
+    if (m_historyNodeList.isEmpty())
+        return false;
+
+    int costRisk = GameGlobal::getRollbackCostRisk();
+    int costReject = GameGlobal::getRollbackCostReject();
+    if (m_currentDecomposeRisk < costRisk || m_geneRejectValue < costReject)
+        return false;
+
+    // 扣除回溯代价
+    m_currentDecomposeRisk -= costRisk;
+    m_geneRejectValue = qMax( 0 , m_geneRejectValue - costReject);
+
+    // 恢复最后一个节点
+    GameGlobal::EvolveHistoryNode node = m_historyNodeList.takeLast();
+    m_pos.setX(node.posX);
+    m_pos.setY(node.posY);
+    m_size = node.bodySize;
+    m_lawType = node.currentLaw;
+    m_decomposeLv = node.decomposeLv;
+    m_currentDecomposeRisk = node.decomposeRisk;
+    m_geneRejectValue = node.geneRejectValue;
+
+    // 恢复基因
     m_unlockGene.clear();
-    for(int type:lastNode.unlockGeneType){
-        unlockGene(static_cast<GameGlobal::GeneType>(type));
-    }
+    for (int t : node.unlockGeneType)
+        unlockGene(static_cast<GameGlobal::GeneType>(t));
+
     return true;
 }
-bool PlayerCell::rollbackToAssignNode(int index){
-    if(m_historyNodeList.isEmpty()) return false;
-    if(index<0||index>=m_historyNodeList.size())return false;
-    int costRisk=GameGlobal::getRollbackCostRisk();
-    int costReject=GameGlobal::getRollbackCostReject();
-    if(m_currentDecomposeRisk<costRisk||m_geneRejectValue<costReject)return false;
-    m_currentDecomposeRisk-=costRisk;
-    m_geneRejectValue-=costReject;
-    GameGlobal::EvolveHistoryNode targetNode=m_historyNodeList.at(index);
-    m_x=targetNode.posX;
-    m_y=targetNode.posY;
-    m_size=targetNode.bodySize;
-    m_lawType=targetNode.currentLaw;
-    m_decomposeLv=targetNode.decomposeLv;
+
+bool PlayerCell::rollbackToAssignNode(int index)
+{
+    if (m_historyNodeList.isEmpty() || index < 0 || index >= m_historyNodeList.size())
+        return false;
+
+    int costRisk = GameGlobal::getRollbackCostRisk();
+    int costReject = GameGlobal::getRollbackCostReject();
+    if (m_currentDecomposeRisk < costRisk || m_geneRejectValue < costReject)
+        return false;
+
+    m_currentDecomposeRisk -= costRisk;
+    m_geneRejectValue -= costReject;
+
+    GameGlobal::EvolveHistoryNode node = m_historyNodeList.at(index);
+    // 恢复全量状态
+    m_pos.setX(node.posX);
+    m_pos.setY(node.posY);
+    m_size = node.bodySize;
+    m_lawType = node.currentLaw;
+    m_decomposeLv = node.decomposeLv;
+    m_currentDecomposeRisk = node.decomposeRisk;
+    m_geneRejectValue = node.geneRejectValue;
+
     m_unlockGene.clear();
-    for(int type:targetNode.unlockGeneType){
-        unlockGene(static_cast<GameGlobal::GeneType>(type));
-    }
-    while(m_historyNodeList.size()>index+1){
+    for (int t : node.unlockGeneType)
+        unlockGene(static_cast<GameGlobal::GeneType>(t));
+
+    // 截断后续节点，改写演化路线
+    while (m_historyNodeList.size() > index + 1)
         m_historyNodeList.removeLast();
-    }
+
     return true;
 }
-int PlayerCell::getHistoryNodeCount()const{
+
+int PlayerCell::getHistoryNodeCount() const
+{
     return m_historyNodeList.size();
 }
-GameGlobal::EvolveHistoryNode PlayerCell::getHistoryNodeByiIndex(int index) const{
-    GameGlobal::EvolveHistoryNode emptyNode;
-    if(index<0||index>=m_historyNodeList.size())return emptyNode;
+
+GameGlobal::EvolveHistoryNode PlayerCell::getHistoryNodeByIndex(int index) const
+{
+    GameGlobal::EvolveHistoryNode empty;
+    if (index < 0 || index >= m_historyNodeList.size())
+        return empty;
     return m_historyNodeList.at(index);
 }
-void PlayerCell::resetHistory(){
-    m_historyNodeList.clear();
+
+// ===================== 基础属性接口 =====================
+qreal PlayerCell::getX() const { return m_pos.x(); }
+qreal PlayerCell::getY() const { return m_pos.y(); }
+void PlayerCell::setPos(qreal x, qreal y) { m_pos.setX(x); m_pos.setY(y); }
+int PlayerCell::getSize() const { return m_size; }
+GameGlobal::LifeLaw PlayerCell::getLawType() const { return m_lawType; }
+void PlayerCell::setLawType(GameGlobal::LifeLaw law) { m_lawType = law; }
+
+// ===================== 全量序列化 =====================
+QJsonObject PlayerCell::toJson() const
+{
+    QJsonObject obj;
+    obj["pos_x"]        = m_pos.x();
+    obj["pos_y"]        = m_pos.y();
+    obj["size"]         = m_size;
+    obj["law_type"]     = (int)m_lawType;
+    obj["decompose_lv"] = (int)m_decomposeLv;
+    obj["decompose_risk"]= m_currentDecomposeRisk;
+    obj["gene_reject"]  = m_geneRejectValue;
+
+    // 基因列表
+    QJsonArray geneArr;
+    for (auto t : m_unlockGene)
+        geneArr.append((int)t);
+    obj["unlock_gene"] = geneArr;
+
+    // 历史节点（简化：仅序列化快照核心数据）
+    QJsonArray nodeArr;
+    for (const auto& n : m_historyNodeList)
+    {
+        QJsonObject nObj;
+        nObj["pos_x"] = n.posX;
+        nObj["pos_y"] = n.posY;
+        nObj["size"] = n.bodySize;
+        nObj["law"] = (int)n.currentLaw;
+        nObj["decompose"] = (int)n.decomposeLv;
+        nObj["risk"] = n.decomposeRisk;
+        nObj["reject"] = n.geneRejectValue;
+
+        QJsonArray gArr;
+        for (int t : n.unlockGeneType) gArr.append(t);
+        nObj["gene"] = gArr;
+        nodeArr.append(nObj);
+    }
+    obj["history_node"] = nodeArr;
+    return obj;
 }
-void PlayerCell::setHistoryList(const GameGlobal::EvolveHistoryNode& hisNode){
-    m_historyNodeList.append(hisNode);
+
+void PlayerCell::fromJson(const QJsonObject& obj)
+{
+    m_pos.setX(obj["pos_x"].toDouble(0));
+    m_pos.setY(obj["pos_y"].toDouble(0));
+    m_size          = obj["size"].toInt(20);
+    m_lawType       = static_cast<GameGlobal::LifeLaw>(obj["law_type"].toInt(0));
+    m_decomposeLv   = static_cast<GameGlobal::DecomposeLevel>(obj["decompose_lv"].toInt(0));
+    m_currentDecomposeRisk = obj["decompose_risk"].toInt(0);
+    m_geneRejectValue = obj["gene_reject"].toInt(0);
+
+    // 恢复基因
+    m_unlockGene.clear();
+    QJsonArray geneArr = obj["unlock_gene"].toArray();
+    for (auto v : geneArr)
+        unlockGene(static_cast<GameGlobal::GeneType>(v.toInt(0)));
+
+    // 恢复历史节点
+    m_historyNodeList.clear();
+    QJsonArray nodeArr = obj["history_node"].toArray();
+    for (auto nVal : nodeArr)
+    {
+        QJsonObject nObj = nVal.toObject();
+        GameGlobal::EvolveHistoryNode node;
+        node.posX = nObj["pos_x"].toDouble();
+        node.posY = nObj["pos_y"].toDouble();
+        node.bodySize = nObj["size"].toInt();
+        node.currentLaw = static_cast<GameGlobal::LifeLaw>(nObj["law"].toInt());
+        node.decomposeLv = static_cast<GameGlobal::DecomposeLevel>(nObj["decompose"].toInt());
+        node.decomposeRisk = nObj["risk"].toInt();
+        node.geneRejectValue = nObj["reject"].toInt();
+
+        QJsonArray gArr = nObj["gene"].toArray();
+        node.unlockGeneType.clear();
+        for (auto g : gArr) node.unlockGeneType.append(g.toInt());
+        m_historyNodeList.append(node);
+    }
 }

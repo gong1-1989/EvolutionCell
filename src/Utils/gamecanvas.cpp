@@ -1,102 +1,131 @@
-#include "gamecanvas.h"
-#include "Core/gamerender.h"
+#include "GameCanvas.h"
 
 GameCanvas::GameCanvas(QWidget *parent)
-    : QWidget{parent},k_w(false),k_s(false),k_a(false)
-    ,k_d(false),isinitializd(false)
+    : QWidget(parent)
 {
-    refreshTimer=new QTimer(this);
-    refreshTimer->setInterval(16);
-    connect(refreshTimer,&QTimer::timeout,this,&GameCanvas::updateCellPos);
-    refreshTimer->start();
-    setFocusPolicy(Qt::StrongFocus);//开启键盘焦点，才能接收按键
+    setFocusPolicy(Qt::StrongFocus); // 捕获键盘焦点
+
+    // 1. 帧定时器 60FPS ≈ 16ms/帧
+    m_frameTimer = new QTimer(this);
+    m_frameTimer->setInterval(1000/GameGlobal::getFPS());
+    connect(m_frameTimer, &QTimer::timeout, this, &GameCanvas::onFrameUpdate);
+    m_frameTimer->start();
+
+    // 2. 按键防抖定时器 200ms
+    m_keyDebounceTimer = new QTimer(this);
+    m_keyDebounceTimer->setInterval(200);
+    m_keyDebounceTimer->setSingleShot(true);
+    connect(m_keyDebounceTimer, &QTimer::timeout, this, &GameCanvas::resetKeyState);
+
+    // 初始化游戏场景
+    GameManager::getInstance().initScene(width(), height());
+    qDebug() << "游戏画布初始化完成";
 }
 
-void GameCanvas::paintEvent(QPaintEvent *e){
-    Q_UNUSED(e);
-    if(!isinitializd){
-        m_gameMgr.initScene(width(),height());
-        isinitializd=true;
+void GameCanvas::onFrameUpdate()
+{
+    //暂停是不更新逻辑
+    if(GameManager::getInstance().getGameState()==GameGlobal::PAUSED){
+        update();
+        return;
     }
-    QPainter p(this);
-    GameRender::drawAll(&p,m_gameMgr,rect());
-}
-void GameCanvas::updateCellPos(){
-    m_gameMgr.frameUpdate(k_w,k_a,k_s,k_d,width(),height());
+    // 驱动游戏主帧更新
+    GameManager::getInstance().frameUpdate(m_keyW, m_keyA, m_keyS, m_keyD, width(), height());
+    // 刷新绘制
     update();
 }
 
-void GameCanvas::reserGameCanvas(){
-    m_gameMgr.reserNewGame();
-    isinitializd=false;
-    update();
+void GameCanvas::resetKeyState()
+{
+    m_keyLocked = false;
 }
-void GameCanvas::loadGameBySlot(const QString &path){
-    m_gameMgr.reserNewGame();
-    m_gameMgr.loadFromSaveSlot(path);
-    isinitializd=false;
-    update();
+
+void GameCanvas::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    // 调用分层绘制
+    m_render.renderAll(&painter, width(), height());
 }
-void GameCanvas::keyPressEvent(QKeyEvent *e){
-    switch (e->key()) {
-    case Qt::Key_W:
-    case Qt::Key_Up:
-        k_w=true;
-        break;
-    case Qt::Key_S:
-    case Qt::Key_Down:
-        k_s=true;
-        break;
-    case Qt::Key_A:
-    case Qt::Key_Left:
-        k_a=true;
-        break;
-    case Qt::Key_D:
-    case Qt::Key_Right:
-        k_d=true;
-        break;
+
+void GameCanvas::keyPressEvent(QKeyEvent *event)
+{
+    int key = event->key();
+    auto& gameMgr = GameManager::getInstance();
+
+    // WASD 移动（持续按下有效，不做防抖）
+    switch (key)
+    {
+    case Qt::Key_W: m_keyW = true; break;
+    case Qt::Key_A: m_keyA = true; break;
+    case Qt::Key_S: m_keyS = true; break;
+    case Qt::Key_D: m_keyD = true; break;
+    }
+
+    // 功能快捷键（防抖，防止连点）
+    if (m_keyLocked&&!m_keyW&&!m_keyA&&!m_keyS&&!m_keyD)
+        return;
+    if(m_keyW||m_keyA||m_keyS||m_keyD||Qt::Key_Escape||Qt::Key_1||Qt::Key_2||Qt::Key_3||Qt::Key_T||Qt::Key_R){
+        m_keyLocked = true;
+        m_keyDebounceTimer->start();
+    }
+
+    GameGlobal::GameState curState = gameMgr.getGameState();
+    switch (key)
+    {
+    // ESC 暂停/继续
     case Qt::Key_Escape:
-        if(m_gameMgr.getGameState()==GameGlobal::RUNING) m_gameMgr.pauseGame();
-        else m_gameMgr.resumeGame();
+        if (curState == GameGlobal::RUNNING)
+            gameMgr.pauseGame();
+        else
+            gameMgr.resumeGame();
         break;
+
+    // 1/2/3 躯体解构
     case Qt::Key_1:
-        if(m_gameMgr.getGameState()==GameGlobal::RUNING) m_gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_LIGHT);
+        gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_LIGHT);
         break;
     case Qt::Key_2:
-        if(m_gameMgr.getGameState()==GameGlobal::RUNING) m_gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_DEEP);
+        gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_DEEP);
         break;
     case Qt::Key_3:
-        if(m_gameMgr.getGameState()==GameGlobal::RUNING) m_gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_FULL);
+        gameMgr.executeBodyDecompose(GameGlobal::DECOMPOSE_FULL);
         break;
+
+    // T 快速存档
     case Qt::Key_T:
-        m_gameMgr.saveToSaveSlot();
+        gameMgr.quickSaveGame();
         break;
+
+    // R 时空回溯（回退上一节点）
     case Qt::Key_R:
-        m_gameMgr.rollbackTolastNode();
+        gameMgr.rollbackToLastNode();
         break;
+
+    // F 启动环境拟态（持续5秒）
+    case Qt::Key_F:
+        gameMgr.startPlayerMimic(GameGlobal::MIMIC_ENV,5000);
+        break;
+
+    // G 触发基因熵变
+    case Qt::Key_G:
+        gameMgr.triggerPlayerGeneChaos();
+        break;
+
     default:
         break;
     }
 }
-void GameCanvas::keyReleaseEvent(QKeyEvent *e){
-    switch (e->key()) {
-    case Qt::Key_W:
-    case Qt::Key_Up:
-        k_w=false;
-        break;
-    case Qt::Key_S:
-    case Qt::Key_Down:
-        k_s=false;
-        break;
-    case Qt::Key_A:
-    case Qt::Key_Left:
-        k_a=false;
-        break;
-    case Qt::Key_D:
-    case Qt::Key_Right:
-        k_d=false;
-        break;
-    default:
-        break;
+
+void GameCanvas::keyReleaseEvent(QKeyEvent *event)
+{
+    // 松开按键，清空移动标记
+    switch (event->key())
+    {
+    case Qt::Key_W: m_keyW = false; break;
+    case Qt::Key_A: m_keyA = false; break;
+    case Qt::Key_S: m_keyS = false; break;
+    case Qt::Key_D: m_keyD = false; break;
     }
 }

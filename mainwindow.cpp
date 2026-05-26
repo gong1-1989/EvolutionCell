@@ -1,15 +1,13 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "src/Utils/gamecanvas.h"
-#include <QMessageBox>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     ,m_currSelectFile("")
 {
     ui->setupUi(this);
-    this->setFixedSize(800,600);
-    this->setWindowTitle("进化亿重奏:细胞纪元");
+    this->setFixedSize(GameGlobal::getWindowWidth(),GameGlobal::getWindowHeight());
+    this->setWindowTitle(GameGlobal::getWindowTitle());
     ui->stackedWidget->setCurrentWidget(ui->HomePage);
     ui->btnBackHome->setVisible(false);
     ui->tableSaveList->setColumnCount(3);
@@ -74,11 +72,13 @@ void MainWindow::on_btnBackHome_clicked()
 
 void MainWindow::on_btnEvolveNormal_clicked()
 {
-    ui->stackedWidget->setCurrentWidget(ui->GamePage);
-    ui->btnBackHome->setVisible(true);
-    GameCanvas* canvas=ui->widgetCanvas;
-    canvas->setFocus();
-    canvas->reserGameCanvas();
+    QWidget* page=ui->stackedWidget->findChild<QWidget*>("GamePage");
+    if(page) {
+        GameManager::getInstance().resetNewGame(width(),height());
+        ui->stackedWidget->setCurrentWidget(page);
+        ui->btnBackHome->setVisible(true);
+        ui->stackedWidget->setFocus();
+    }
 }
 
 
@@ -88,8 +88,7 @@ void MainWindow::on_btnEvolveEndless_clicked()
     if(page) {
         ui->stackedWidget->setCurrentWidget(page);
         ui->btnBackHome->setVisible(true);
-        GameCanvas* canvas=ui->widgetCanvas;
-        canvas->setFocus();
+        ui->stackedWidget->setFocus();
     }
 }
 
@@ -100,8 +99,7 @@ void MainWindow::on_btnTrail_clicked()
     if(page) {
         ui->stackedWidget->setCurrentWidget(page);
         ui->btnBackHome->setVisible(true);
-        GameCanvas* canvas=ui->widgetCanvas;
-        canvas->setFocus();
+        ui->stackedWidget->setFocus();
     }
 }
 
@@ -112,29 +110,39 @@ void MainWindow::on_tableSaveList_cellDoubleClicked(int row, int column)
     if(!item) return;
     QString path=item->data(Qt::UserRole).toString();
     if(path.isEmpty()) return;
-    ui->widgetCanvas->loadGameBySlot(path);
-    ui->stackedWidget->setCurrentWidget(ui->GamePage);
+    GameManager::getInstance().resetNewGame(width(),height());
+    bool loadSuccess=GameManager::getInstance().loadGameFromFile(path);
+    if(loadSuccess){
+        ui->stackedWidget->setCurrentWidget(ui->GamePage);
+        ui->stackedWidget->setFocus();
+    }else{
+        QMessageBox::warning(this,"加载失败","存档文件损坏或不存在！");
+    }
+
 }
 bool MainWindow::hasAnyValidSave(){
-    auto list=SaveManager::getInstance().getBriefList();
+    auto list=SaveManager::getInstance().getSaveFileList();
     return !list.isEmpty();
 }
 void MainWindow::refreshSaveTable(){
-    SaveManager& saveMgr=SaveManager::getInstance();
-    QList<SaveBriefInfo> infoList=saveMgr.getBriefList();
+    QList<QString> infoList=SaveManager::getInstance().getSaveFileList();
     ui->tableSaveList->setRowCount(infoList.size());
     for(int row=0;row<infoList.size();++row){
-        SaveBriefInfo info=infoList[row];
-        QTableWidgetItem* item1=new QTableWidgetItem(info.saveTime);
-        QTableWidgetItem* item2=new QTableWidgetItem(QString::number(info.eatTotal));
-        QTableWidgetItem* item3=new QTableWidgetItem(QString::number(info.cellSize));
-        item1->setData(Qt::UserRole,info.fileName);
+        QString fileName=infoList[row].split("/").last();
+        QString timeStr=fileName.replace(".json","");
+        qint64 timeStamp=timeStr.toLongLong();
+        QDateTime saveTime=QDateTime::fromMSecsSinceEpoch(timeStamp);
+        QString showText=QString("存档时间：%1").arg(saveTime.toString("yyyy-MM-dd HH:mm:ss"));
+        QTableWidgetItem* item1=new QTableWidgetItem(showText);
+        //QTableWidgetItem* item2=new QTableWidgetItem(QString::number(info.eatTotal));
+        //QTableWidgetItem* item3=new QTableWidgetItem(QString::number(info.cellSize));
+        item1->setData(Qt::UserRole,infoList[row]);
         item1->setTextAlignment(Qt::AlignCenter);
-        item2->setTextAlignment(Qt::AlignCenter);
-        item3->setTextAlignment(Qt::AlignCenter);
+       // item2->setTextAlignment(Qt::AlignCenter);
+        //item3->setTextAlignment(Qt::AlignCenter);
         ui->tableSaveList->setItem(row,0,item1);
-        ui->tableSaveList->setItem(row,1,item2);
-        ui->tableSaveList->setItem(row,2,item3);
+        //ui->tableSaveList->setItem(row,1,item2);
+        //ui->tableSaveList->setItem(row,2,item3);
     }
     ui->btnLoadGame->setEnabled(!infoList.isEmpty());
 }
@@ -150,7 +158,12 @@ void MainWindow::deleteSelectedSave(){
     QMessageBox::StandardButton ret=QMessageBox::question(this,"删除确认","确定要删除该存档吗？删除后无法恢复！"
                                                             ,QMessageBox::Yes|QMessageBox::No);
     if(ret!=QMessageBox::Yes)return;
-    SaveManager::getInstance().deleteSlotSave(m_currSelectFile);
+    bool deleteSuccess=SaveManager::getInstance().deleteSave(m_currSelectFile);
+    if(!deleteSuccess){
+        QMessageBox::critical(this,"删除失败",QString("无法删除存档文件！"));
+        return;
+    }
     refreshSaveTable();
+    QMessageBox::information(this,"操作完成","存档删除成功！");
     ui->btnLoadGame->setEnabled(hasAnyValidSave());
 }

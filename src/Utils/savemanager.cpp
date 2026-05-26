@@ -1,113 +1,120 @@
-#include "savemanager.h"
-#include <QFile>
-#include <QDir>
-#include <QDebug>
-#include <QFileInfoList>
-const QString SAVE_DIR_PATH="save";
-const QString SAVE_FILE_PREFIX="save_";
-const QString SAVE_FILE_SUFFIX=".json";
-SaveManager::SaveManager(QObject *parent)
-    : QObject{parent}
-{}
-SaveManager& SaveManager::getInstance(){
+#include "SaveManager.h"
+
+SaveManager& SaveManager::getInstance()
+{
     static SaveManager ins;
     return ins;
 }
-QString SaveManager::generatetimeSaveName()const{
-    QString timeStr=QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
-    return QString("%1%2%3").arg(SAVE_FILE_PREFIX).arg(timeStr).arg(SAVE_FILE_SUFFIX);
+
+QString SaveManager::getSaveDir() const
+{
+    // 存档目录：程序运行目录下 /save/
+    return QDir::currentPath() + "/save";
 }
-QString SaveManager::getSlotPath(const QString &filePath) const{
-    return QString("%1/%2").arg(SAVE_DIR_PATH).arg(filePath);
-}
-QString SaveManager::saveToSlot( const QJsonObject &data){
-    QDir saveDir(SAVE_DIR_PATH);
-    if(!saveDir.exists()){
-        bool createRet=saveDir.mkpath(".");
-        if(!createRet){
-            qDebug()<<"存档目录创建失败，无法保存存档！";
-            return "";
+
+bool SaveManager::checkAndCreateDir() const
+{
+    QDir dir(getSaveDir());
+    if (!dir.exists())
+    {
+        bool ret = dir.mkdir(".");
+        if (!ret)
+        {
+            qWarning() << "存档目录创建失败！";
+            return false;
         }
+        qDebug() << "自动创建存档目录：" << getSaveDir();
     }
-    QString path=getSlotPath(generatetimeSaveName());
-    QFile file(path);
-    if(!file.open(QIODevice::WriteOnly|QIODevice::Text)){
-        qDebug()<<"存档失败，文件无法写入！";
+    return true;
+}
+
+QString SaveManager::createNewSave(const QJsonObject& rootData)
+{
+    if (!checkAndCreateDir())
+        return "";
+
+    // 文件名：时间戳.json 保证唯一
+    qint64 timestamp = QDateTime::currentMSecsSinceEpoch();
+    QString timeStr = QString::number(timestamp);
+    QString filePath = getSaveDir() + "/" + timeStr + ".json";
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        qWarning() << "创建存档文件失败：" << filePath;
         return "";
     }
-    QJsonObject saveObj;
-    saveObj["timestamp"]=QDateTime::currentDateTime().toString("yyyy-MM-dd HH::mm");
-    saveObj["game_data"]=data;
-    QJsonDocument doc(saveObj);
+
+    // 根节点追加版本号
+    QJsonObject saveRoot;
+    saveRoot["save_version"] = m_saveVersion;
+    saveRoot["game_data"] = rootData;
+
+    QJsonDocument doc(saveRoot);
     file.write(doc.toJson(QJsonDocument::Indented));
     file.close();
-    qDebug()<<"存档成功！";
-    return path;
+
+    qDebug() << "存档成功：" << filePath;
+    return filePath;
 }
-QJsonObject SaveManager::loadFromSlot(const QString &filePath){
-    if(!QDir(SAVE_DIR_PATH).exists()){
-        qDebug()<<"存档目录不存在，无法读取存档！";
-        return QJsonObject();
+
+QJsonObject SaveManager::loadSave(const QString& filePath)
+{
+    QJsonObject emptyObj;
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qWarning() << "读取存档失败，文件不存在：" << filePath;
+        return emptyObj;
     }
-    QString path=getSlotPath(filePath);
-    QFile file(path);
-    if(!file.open(QIODevice::ReadOnly|QIODevice::Text)) {
-        qDebug()<<"存档文件加载失败："<<path;
-        return QJsonObject();
-    }
-    QByteArray raw=file.readAll();
+
+    QByteArray fileData = file.readAll();
     file.close();
-    QJsonDocument doc=QJsonDocument::fromJson(raw);
-    if(!doc.isObject()) {
-        qDebug()<<"存档位"<<filePath<<"数据格式损坏！";
-        return QJsonObject();
+
+    QJsonDocument doc = QJsonDocument::fromJson(fileData);
+    if (doc.isNull() || !doc.isObject())
+    {
+        qWarning() << "存档文件JSON格式损坏：" << filePath;
+        return emptyObj;
     }
-    return doc.object()["game_data"].toObject();
+
+    QJsonObject root = doc.object();
+    // 版本兼容校验（可后续扩展多版本适配）
+    QString ver = root["save_version"].toString("1.0");
+    if (ver != m_saveVersion)
+    {
+        qWarning() << "存档版本不匹配，当前版本：" << m_saveVersion << " 存档版本：" << ver;
+    }
+
+    return root["game_data"].toObject();
 }
-bool SaveManager::deleteSlotSave(const QString &filePath){
-    return QFile::remove(getSlotPath(filePath));
+
+QList<QString> SaveManager::getSaveFileList() const
+{
+    QList<QString> fileList;
+    if (!checkAndCreateDir())
+        return fileList;
+
+    QDir dir(getSaveDir());
+    // 仅筛选 .json 存档文件
+    dir.setNameFilters(QStringList() << "*.json");
+    dir.setFilter(QDir::Files);
+
+    for (const QString& fileName : dir.entryList())
+    {
+        fileList.append(getSaveDir() + "/" + fileName);
+    }
+    return fileList;
 }
-QList<SaveBriefInfo> SaveManager::getBriefList(){
-   QList<SaveBriefInfo> briefList;
-    QDir dir(SAVE_DIR_PATH);
-    if(!dir.exists()){
-        qDebug()<<"存档目录不存在，无法读取存档！";
-        return briefList;
-    }
-    QFileInfoList fileList=dir.entryInfoList(QDir::Files);
-    for(const QFileInfo& info:fileList){
-        QString fileName=info.fileName();
-        if(!fileName.startsWith(SAVE_FILE_PREFIX)||!fileName.endsWith(SAVE_FILE_SUFFIX))
-            continue;
-        SaveBriefInfo brief;
-        brief.fileName=fileName;
-        brief.exist=true;
-        QFile file(info.absoluteFilePath());
-        if(!file.open(QIODevice::ReadOnly|QIODevice::Text)){
-            brief.saveTime="损坏存档";
-            briefList.append(brief);
-            file.close();
-            continue;
-        }
-        QByteArray raw=file.readAll();
-        file.close();
-        QJsonDocument doc=QJsonDocument::fromJson(raw);
-        if(!doc.isObject()){
-            brief.saveTime="格式异常";
-            briefList.append(brief);
-            continue;
-        }
-        QJsonObject root=doc.object();
-        brief.saveTime=root["timestamp"].toString("未知时间");
-        QJsonObject gameData=root["game_data"].toObject();
-        QJsonObject player=gameData["player"].toObject();
-        brief.cellSize=player["size"].toInt();
-        QJsonObject stat=gameData["stat"].toObject();
-        brief.eatTotal=stat["total_eat"].toInt();
-        briefList.append(brief);
-    }
-    std::sort(briefList.begin(),briefList.end(),[](const SaveBriefInfo&a,const SaveBriefInfo&b){
-        return a.saveTime>b.saveTime;
-    });
-    return briefList;
+
+QString SaveManager::getSaveFullPath(const QString &fileName)const{
+    return getSaveDir()+"/"+fileName;
+}
+
+bool SaveManager::deleteSave(const QString &fullPath){
+    QFile file(fullPath);
+    if(!file.exists())return false;
+    return file.remove();
+
 }

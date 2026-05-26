@@ -25,7 +25,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         Res.qrc
         src/Utils/collisionutil.h src/Utils/collisionutil.cpp
-        src/Utils/MathAToB.h
+
         src/Utils/gamecanvas.h src/Utils/gamecanvas.cpp
         src/Core/gameglobal.h src/Core/gameglobal.cpp
         src/Utils/randomutil.h src/Utils/randomutil.cpp

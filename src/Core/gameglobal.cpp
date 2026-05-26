@@ -1,203 +1,269 @@
-#include "gameglobal.h"
+#include "GameGlobal.h"
+
+/**
+ * @brief 重构说明
+ * 原代码大量重复 cfg["xxx"]["xxx"] 解析，现统一调用 ConfigReader 通用方法
+ * 所有接口仅做「取值转发」，新增/修改配置仅需改 json + 接口声明，无需改动实现
+ */
 using namespace GameGlobal;
-static ConfigReader& cfg=ConfigReader::getInstance();
-qreal GameGlobal::getPlayerSpeed(){
-    auto obj=cfg.getGemeConfig().value("player_base").toObject();
-    return obj.value("move_speed").toDouble(3.0);
+static ConfigReader& cfg = ConfigReader::getInstance();
+//===================== 全局窗口设置 ===================
+int GameGlobal::getWindowWidth(){
+    return cfg.getInt(cfg.getRootConfig()["game_setting"].toObject(),"width",1280);
 }
-int GameGlobal::getPlayerInitSize(){
-    auto obj=cfg.getGemeConfig().value("player_base").toObject();
-    return obj.value("init_size").toInt(24);
+int GameGlobal::getWindowHeight(){
+    return cfg.getInt(cfg.getRootConfig()["game_setting"].toObject(),"height",720);
 }
-int GameGlobal::getPlayerMaxSize(){
-    auto obj=cfg.getGemeConfig().value("player_base").toObject();
-    return obj.value("max_size").toInt(80);
+int GameGlobal::getFPS(){
+    return cfg.getInt(cfg.getRootConfig()["game_setting"].toObject(),"fps",60);
 }
-int GameGlobal::getGrowRatio(){
-    auto obj=cfg.getGemeConfig().value("player_base").toObject();
-    return obj.value("grow_ratio").toInt(4);
+
+QString GameGlobal::getWindowTitle(){
+    return cfg.getString(cfg.getRootConfig()["game_setting"].toObject(),"title","未知");
 }
-qreal GameGlobal::getSpeedBuffMult(){
-    auto obj=cfg.getGemeConfig().value("buff_setting").toObject();
-    return obj.value("speed_buff_mult").toDouble(1.5);
+// ===================== 玩家配置 =====================
+qreal GameGlobal::getPlayerSpeed()
+{
+    return cfg.getDouble(cfg.getRootConfig()["player_setting"].toObject(), "move_speed", 2.8);
 }
-qreal GameGlobal::getDebuffMult(){
-    auto obj=cfg.getGemeConfig().value("buff_setting").toObject();
-    return obj.value("debuff_mult").toDouble(0.7);
+
+int GameGlobal::getPlayerInitSize()
+{
+    return cfg.getInt(cfg.getRootConfig()["player_setting"].toObject(), "init_size", 20);
 }
-int GameGlobal::getBuffDuration(){
-    auto obj=cfg.getGemeConfig().value("buff_setting").toObject();
-    return obj.value("buff_duration_ms").toInt(3000);
+
+int GameGlobal::getPlayerMaxSize()
+{
+    return cfg.getInt(cfg.getRootConfig()["player_setting"].toObject(), "max_size", 150);
 }
-int GameGlobal::getMaxMonsterCount(){
-    auto obj=cfg.getGemeConfig().value("scene_setting").toObject();
-    return obj.value("bound_offset").toInt(30);
+
+int GameGlobal::getGrowRatio()
+{
+    return cfg.getInt(cfg.getRootConfig()["player_setting"].toObject(), "grow_ratio", 8);
 }
-int GameGlobal::getMonMinSize(){
-    auto obj=cfg.getMonsterConfig().value("normal").toObject();
-    return obj.value("size_min").toInt(8);
+
+qreal GameGlobal::getSpeedBuffMult()
+{
+    return cfg.getDouble(cfg.getRootConfig()["player_setting"].toObject(), "speed_buff_mult", 1.6);
 }
-int GameGlobal::getMonMaxSize(){
-    auto obj=cfg.getMonsterConfig().value("normal").toObject();
-    return obj.value("size_max").toInt(16);
+
+int GameGlobal::getBuffDuration()
+{
+    return cfg.getInt(cfg.getRootConfig()["player_setting"].toObject(), "buff_duration", 4000);
 }
-qreal GameGlobal::getMonSpeedRange(){
-    auto obj=cfg.getMonsterConfig().value("normal").toObject();
-    return obj.value("speed_range").toDouble(1.50);
+
+qreal GameGlobal::getDebuffMult()
+{
+    return cfg.getDouble(cfg.getRootConfig()["player_setting"].toObject(), "debuff_mult", 0.5);
 }
-int GameGlobal::getEliteMinSize(){
-    auto obj=cfg.getMonsterConfig().value("elite").toObject();
-    return obj.value("size_min").toInt(18);
+
+// ===================== 怪物配置 =====================
+int GameGlobal::getMaxMonsterCount()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "max_count", 18);
 }
-int GameGlobal::getEliteMaxSize(){
-    auto obj=cfg.getMonsterConfig().value("elite").toObject();
-    return obj.value("size_max").toInt(24);
+
+int GameGlobal::getBoundOffset()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "bound_offset", 30);
 }
-qreal GameGlobal::getEliteSpeedMult(){
-    auto obj=cfg.getMonsterConfig().value("elite").toObject();
-    return obj["speed_mult"].toDouble(0.7);
+
+int GameGlobal::getMonMinSize()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "min_size", 8);
 }
-qreal GameGlobal::getSpecialSpeedMult(){
-    auto obj=cfg.getMonsterConfig().value("special").toObject();
-    return obj["speed_mult"].toDouble(1.3);
+
+int GameGlobal::getMonMaxSize()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "max_size", 35);
 }
-int GameGlobal::getProbNoramal(){
-    auto obj=cfg.getMonsterConfig().value("normal").toObject();
-    return obj.value("probability").toInt(70);
+
+qreal GameGlobal::getMonSpeedRange()
+{
+    return cfg.getDouble(cfg.getRootConfig()["monster_setting"].toObject(), "speed_max", 2.2);
 }
-int GameGlobal::getProbElite(){
-    auto obj=cfg.getMonsterConfig().value("elite").toObject();
-    return obj.value("probability").toInt(20);
+
+int GameGlobal::getEliteMinSize()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "elite_min_size", 22);
 }
-int GameGlobal::getProbSpecial(){
-    auto obj=cfg.getMonsterConfig().value("special").toObject();
-    return obj.value("probability").toInt(10);
+
+int GameGlobal::getEliteMaxSize()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "elite_max_size", 45);
 }
-int GameGlobal::getBoundOffset(){
-    auto obj=cfg.getGemeConfig().value("scene_setting").toObject();
-    return obj.value("bound_offset").toInt(30);
+
+qreal GameGlobal::getEliteSpeedMult()
+{
+    return cfg.getDouble(cfg.getRootConfig()["monster_setting"].toObject(), "elite_speed_mult", 1.3);
 }
-int GameGlobal::getUnlockRangeNum(){
-    auto obj=cfg.getGeneConfig().value("unlock_condition").toObject();
-    return obj.value("range_extend").toInt(8);
+
+qreal GameGlobal::getSpecialSpeedMult()
+{
+    return cfg.getDouble(cfg.getRootConfig()["monster_setting"].toObject(), "special_speed_mult", 1.5);
 }
-int GameGlobal::getUnlockSpeedNum(){
-    auto obj=cfg.getGeneConfig().value("unlock_condition").toObject();
-    return obj.value("speed_up").toInt(10);
+
+int GameGlobal::getProbNormal()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "prob_normal", 65);
 }
-int GameGlobal::getUnlockGrowNum(){
-    auto obj=cfg.getGeneConfig().value("unlock_condition").toObject();
-    return obj.value("grow_boost").toInt(6);
+
+int GameGlobal::getProbElite()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "prob_elite", 25);
 }
-qreal GameGlobal::getGeneRangeRatio(){
-    auto obj=cfg.getGeneConfig().value("gene_ratio").toObject();
-    return obj.value("range").toDouble(1.25);
+
+int GameGlobal::getProbSpecial()
+{
+    return cfg.getInt(cfg.getRootConfig()["monster_setting"].toObject(), "prob_special", 10);
 }
-qreal GameGlobal::getGenespeedRatio(){
-    auto obj=cfg.getGeneConfig().value("gene_ratio").toObject();
-    return obj.value("speed").toDouble(1.15);
+
+// ===================== 基因配置 =====================
+int GameGlobal::getUnlockRangeNum()
+{
+    return cfg.getInt(cfg.getRootConfig()["gene_setting"].toObject(), "unlock_range_num", 8);
 }
-qreal GameGlobal::getGeneGrowRatio(){
-    auto obj=cfg.getGeneConfig().value("gene_ratio").toObject();
-    return obj.value("grow").toDouble(1.2);
+
+int GameGlobal::getUnlockSpeedNum()
+{
+    return cfg.getInt(cfg.getRootConfig()["gene_setting"].toObject(), "unlock_speed_num", 12);
 }
-qreal GameGlobal::getLightDocmposeSpeedLoss(){
-    auto obj=cfg.getGemeConfig().value("decompose_attr").toObject();
-    return obj.value("light_speed_loss").toDouble(0.1);
+
+int GameGlobal::getUnlockGrowNum()
+{
+    return cfg.getInt(cfg.getRootConfig()["gene_setting"].toObject(), "unlock_grow_num", 15);
 }
-qreal GameGlobal::getLightDocmposeCritGain(){
-    auto obj=cfg.getGemeConfig().value("decompose_attr").toObject();
-    return obj.value("light_crit_gain").toDouble(0.15);
+
+qreal GameGlobal::getGeneRangeRatio()
+{
+    return cfg.getDouble(cfg.getRootConfig()["gene_setting"].toObject(), "range_ratio", 1.25);
 }
-qreal GameGlobal::getDeepDocmposeHPLoss(){
-    auto obj=cfg.getGemeConfig().value("decompose_attr").toObject();
-    return obj.value("deep_hp_loss").toDouble(0.15);
+
+qreal GameGlobal::getGeneSpeedRatio()
+{
+    return cfg.getDouble(cfg.getRootConfig()["gene_setting"].toObject(), "speed_ratio", 1.2);
 }
-qreal GameGlobal::getDeepDocmposeAtkGain(){
-    auto obj=cfg.getGemeConfig().value("decompose_attr").toObject();
-    return obj.value("deep_atk_gain").toDouble(0.25);
+
+qreal GameGlobal::getGeneGrowRatio()
+{
+    return cfg.getDouble(cfg.getRootConfig()["gene_setting"].toObject(), "grow_ratio", 1.18);
 }
-qreal GameGlobal::getFullDocmposeExtremeAt(){
-    auto obj=cfg.getGemeConfig().value("decompose_attr").toObject();
-    return obj.value("full_atk_gain").toDouble(0.4);
+
+// ===================== 躯体解构配置 =====================
+qreal GameGlobal::getLightDecomposeSpeedLoss()
+{
+    return cfg.getDouble(cfg.getRootConfig()["decompose_setting"].toObject(), "light_speed_loss", 0.15);
 }
-int GameGlobal::getDecomposerRisk(DecomposeLevel lv){
-    switch (lv) {
-    case DECOMPOSE_LIGHT:
-        return 1;
-        break;
-    case DECOMPOSE_DEEP:
-        return 2;
-        break;
-    case DECOMPOSE_FULL:
-        return 3;
-        break;
-    default:
-        return 0;
-        break;
+
+qreal GameGlobal::getLightDecomposeCritGain()
+{
+    return cfg.getDouble(cfg.getRootConfig()["decompose_setting"].toObject(), "light_crit_gain", 0.2);
+}
+
+qreal GameGlobal::getDeepDecomposeHPLoss()
+{
+    return cfg.getDouble(cfg.getRootConfig()["decompose_setting"].toObject(), "deep_hp_loss", 0.25);
+}
+
+qreal GameGlobal::getDeepDecomposeAtkGain()
+{
+    return cfg.getDouble(cfg.getRootConfig()["decompose_setting"].toObject(), "deep_atk_gain", 0.35);
+}
+
+qreal GameGlobal::getFullDecomposeExtremeAtk()
+{
+    return cfg.getDouble(cfg.getRootConfig()["decompose_setting"].toObject(), "full_extreme_atk", 0.6);
+}
+
+int GameGlobal::getDecomposeRisk(DecomposeLevel lv)
+{
+    switch (lv)
+    {
+    case DECOMPOSE_LIGHT: return 10;
+    case DECOMPOSE_DEEP:  return 25;
+    case DECOMPOSE_FULL:  return 45;
+    default: return 0;
     }
 }
-int GameGlobal::getMaxSymbiosisCount(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("max_count").toInt(6);
+
+// ===================== 共生体系配置 =====================
+int GameGlobal::getMaxSymbiosisCount()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "max_count", 6);
 }
-int GameGlobal::getSingleRejectValue(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("single_reject").toInt(8);
+
+int GameGlobal::getSingleRejectValue()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "single_reject", 8);
 }
-int GameGlobal::getRejectWarningThreshold(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("warn_threshold").toInt(25);
+
+int GameGlobal::getRejectWarningThreshold()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "warn_threshold", 25);
 }
-int GameGlobal::getRejectDangerThreshold(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("danger_threshold").toInt(50);
+
+int GameGlobal::getRejectDangerThreshold()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "danger_threshold", 50);
 }
-int GameGlobal::getTempSymbiosisDuration(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("temp_duration").toInt(8000);
+
+int GameGlobal::getTempSymbiosisDuration()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "temp_duration", 8000);
 }
-qreal GameGlobal::getSymbiosisFollowRange(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("follow_range").toDouble(60.0);
+
+qreal GameGlobal::getSymbiosisFollowRange()
+{
+    return cfg.getDouble(cfg.getRootConfig()["symbiosis_setting"].toObject(), "follow_range", 150.0);
 }
-qreal GameGlobal::getSymAttackRange(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("attack_range").toDouble(25.0);
+
+qreal GameGlobal::getSymAttackRange()
+{
+    return cfg.getDouble(cfg.getRootConfig()["symbiosis_setting"].toObject(), "attack_range", 30.0);
 }
-int GameGlobal::getNormalSymAttack(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("atk_normal").toInt(1);
+
+int GameGlobal::getNormalSymAttack()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "atk_normal", 1);
 }
-int GameGlobal::getEliteSymAttack(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("atk_elite").toInt(3);
+
+int GameGlobal::getEliteSymAttack()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "atk_elite", 3);
 }
-int GameGlobal::getSpecialSymAttack(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("atk_special").toInt(5);
+
+int GameGlobal::getSpecialSymAttack()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "atk_special", 5);
 }
-int GameGlobal::getSymAttackCdMs(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("attack_cd").toInt(600);
+
+int GameGlobal::getSymAttackCdMs()
+{
+    return cfg.getInt(cfg.getRootConfig()["symbiosis_setting"].toObject(), "attack_cd", 500);
 }
-int GameGlobal::getMaxHistoryNode(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("max_history_node").toInt(8);
+
+// ===================== 回溯 & 残影配置 =====================
+int GameGlobal::getMaxHistoryNode()
+{
+    return cfg.getInt(cfg.getRootConfig()["rollback_ghost_setting"].toObject(), "max_history_node", 8);
 }
-int GameGlobal::getRollbackCostRisk(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("rollback_cost_risk").toInt(10);
+
+int GameGlobal::getRollbackCostRisk()
+{
+    return cfg.getInt(cfg.getRootConfig()["rollback_ghost_setting"].toObject(), "rollback_cost_risk", 10);
 }
-int GameGlobal::getRollbackCostReject(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("rollback_cost_reject").toInt(15);
+
+int GameGlobal::getRollbackCostReject()
+{
+    return cfg.getInt(cfg.getRootConfig()["rollback_ghost_setting"].toObject(), "rollback_cost_reject", 15);
 }
-int GameGlobal::getGhostLifeTime(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("ghost_life_time").toInt(5000);
+
+int GameGlobal::getGhostLifeTime()
+{
+    return cfg.getInt(cfg.getRootConfig()["rollback_ghost_setting"].toObject(), "ghost_life_time", 5000);
 }
-qreal GameGlobal::getGhostAttackMult(){
-    auto obj=cfg.getGemeConfig().value("symbiosis_setting").toObject();
-    return obj.value("ghost_atack_mult").toDouble(0.6);
+
+qreal GameGlobal::getGhostAttackMult()
+{
+    return cfg.getDouble(cfg.getRootConfig()["rollback_ghost_setting"].toObject(), "ghost_attack_mult", 0.6);
 }
