@@ -2,7 +2,7 @@
 
 PlayerCell::PlayerCell()
     : m_pos(0, 0)
-    , m_size(GameGlobal::getPlayerInitSize())
+    , m_size(ConfigReader::getInstance().getDouble("player_setting", "init_size", 20))
     , m_lawType(GameGlobal::LAW_FISSION)
     , m_decomposeLv(GameGlobal::DECOMPOSE_NONE)
     , m_currentDecomposeRisk(0)
@@ -21,7 +21,7 @@ PlayerCell::PlayerCell()
 // ===================== 基础移动 =====================
 void PlayerCell::move(bool keyW, bool keyA, bool keyS, bool keyD, int canvasW, int canvasH)
 {
-    qreal speed = GameGlobal::getPlayerSpeed();
+    qreal speed = ConfigReader::getInstance().getDouble("player_setting", "move_speed", 2.8);
     qreal dx = 0, dy = 0;
 
     if (keyW) dy -= speed;
@@ -51,7 +51,7 @@ void PlayerCell::move(bool keyW, bool keyA, bool keyS, bool keyD, int canvasW, i
 
 void PlayerCell::grow(int addSize, GameGlobal::MonsterType type)
 {
-    int maxSize = GameGlobal::getPlayerMaxSize();
+    int maxSize = ConfigReader::getInstance().getInt("player_setting", "max_size", 150);
     m_size += addSize;
     if (m_size > maxSize)
         m_size = maxSize;
@@ -148,7 +148,7 @@ bool PlayerCell::triggerGeneChao(){
         //中性畸变：无变化
     }else{
         //负向畸变：体型减少
-        m_size=qMax(GameGlobal::getPlayerInitSize(),m_size-5);
+        m_size=qMax(ConfigReader::getInstance().getInt("player_setting", "init_size", 20),m_size-5);
     }
     //更新基因稳定状态
     if(m_geneStableValue>=70) m_geneStableState=GameGlobal::STABLE_SAFE;
@@ -176,12 +176,12 @@ GameGlobal::GeneStableState PlayerCell::getGeneStableState()const{
 // ===================== 共生体系 =====================
 bool PlayerCell::addSymbiosis(const SymbiosisCell& cell)
 {
-    int maxCnt = GameGlobal::getMaxSymbiosisCount();
+    int maxCnt = ConfigReader::getInstance().getInt("symbiosis_setting", "max_count", 6);
     if (m_symbiosisList.size() >= maxCnt)
         return false;
 
     m_symbiosisList.append(cell);
-    addGeneReject(GameGlobal::getSingleRejectValue());
+    addGeneReject( ConfigReader::getInstance().getInt("symbiosis_setting", "single_reject", 8));
     return true;
 }
 
@@ -192,7 +192,7 @@ void PlayerCell::clearExpiredSymbiosis(qint64 nowTime)
     {
         if (m_symbiosisList[i].isTempExpired(nowTime))
         {
-            subGeneReject(GameGlobal::getSingleRejectValue());
+            subGeneReject(ConfigReader::getInstance().getInt("symbiosis_setting", "single_reject", 8));
             m_symbiosisList.removeAt(i);
         }
     }
@@ -206,7 +206,7 @@ void PlayerCell::clearAllSymbiosis()
 
 void PlayerCell::updateSymbiosisFollow(qreal playerX, qreal playerY, const QList<MonsterCell> &monsterList)
 {
-    qreal range = GameGlobal::getSymbiosisFollowRange();
+    qreal range = ConfigReader::getInstance().getDouble("symbiosis_setting", "follow_range", 150.0);
     for (auto& cell : m_symbiosisList)
     {
         cell.update(playerX, playerY, range, monsterList);
@@ -247,8 +247,8 @@ void PlayerCell::subGeneReject(int val)
 
 GameGlobal::RejectLevel PlayerCell::getCurrentRejectLevel() const
 {
-    int warn = GameGlobal::getRejectWarningThreshold();
-    int danger = GameGlobal::getRejectDangerThreshold();
+    int warn = ConfigReader::getInstance().getInt("symbiosis_setting", "warn_threshold", 25);
+    int danger =  ConfigReader::getInstance().getInt("symbiosis_setting", "danger_threshold", 50);
     if (m_geneRejectValue >= danger) return GameGlobal::REJECT_DANGER;
     if (m_geneRejectValue >= warn)  return GameGlobal::REJECT_WARNING;
     return GameGlobal::REJECT_SAFE;
@@ -257,7 +257,7 @@ GameGlobal::RejectLevel PlayerCell::getCurrentRejectLevel() const
 // ===================== 时空回溯 历史节点 =====================
 void PlayerCell::recordCurrentEvolveNode()
 {
-    int maxNode = GameGlobal::getMaxHistoryNode();
+    int maxNode = ConfigReader::getInstance().getInt("rollback_ghost_setting", "max_history_node", 8);
     if (m_historyNodeList.size() >= maxNode)
         m_historyNodeList.removeFirst();
 
@@ -282,8 +282,8 @@ bool PlayerCell::rollbackToLastNode()
     if (m_historyNodeList.isEmpty())
         return false;
 
-    int costRisk = GameGlobal::getRollbackCostRisk();
-    int costReject = GameGlobal::getRollbackCostReject();
+    int costRisk =ConfigReader::getInstance().getInt("rollback_ghost_setting", "rollback_cost_risk", 10);
+    int costReject = ConfigReader::getInstance().getInt("rollback_ghost_setting", "rollback_cost_reject", 15);
     if (m_currentDecomposeRisk < costRisk || m_geneRejectValue < costReject)
         return false;
 
@@ -314,8 +314,8 @@ bool PlayerCell::rollbackToAssignNode(int index)
     if (m_historyNodeList.isEmpty() || index < 0 || index >= m_historyNodeList.size())
         return false;
 
-    int costRisk = GameGlobal::getRollbackCostRisk();
-    int costReject = GameGlobal::getRollbackCostReject();
+    int costRisk =ConfigReader::getInstance().getInt("rollback_ghost_setting", "rollback_cost_risk", 10);
+    int costReject = ConfigReader::getInstance().getInt("rollback_ghost_setting", "rollback_cost_reject", 15);
     if (m_currentDecomposeRisk < costRisk || m_geneRejectValue < costReject)
         return false;
 

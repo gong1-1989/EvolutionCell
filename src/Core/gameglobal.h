@@ -17,7 +17,7 @@ namespace GameGlobal
 /**
  * @brief 游戏运行状态
  */
-enum GameState
+enum class GameState
 {
     RUNNING,    // 正常运行
     PAUSED      // 游戏暂停
@@ -26,7 +26,7 @@ enum GameState
 /**
  * @brief 怪物类型（策划5.2）
  */
-enum MonsterType
+enum class MonsterType
 {
     NORMAL,     // 普通怪物
     ELITE,      // 精英怪物
@@ -34,20 +34,42 @@ enum MonsterType
 };
 
 /**
- * @brief 基因类型（策划8.1）
+ * @brief 基因属性（策划8.1）（进化解锁，不达门槛不可用）
  */
-enum GeneType
+enum class GeneAttr
 {
-    GENE_NONE,          // 无基因
-    GENE_RANGE_EXTEND,  // 范围扩展
-    GENE_SPEED_UP,      // 移速提升
-    GENE_GROW_BOOST     // 成长加速
+    None,Metal,Wood, Water, Fire,Earth
 };
+
+/**
+ * @brief 能力类型（进化解锁，不达门槛不可用）
+ */
+enum class AbilityType{
+    Split,                  //分裂（基础）
+    Symbiosis,              //共生
+    GhostRollback,          //时空残影
+    Mimic,                  //拟态
+    GeneChao                //基因熵变
+};
+
+/**
+ * @brief 吞噬结果类型
+ */
+enum class EatResult{
+    Win,                    //吞噬成功
+    Lose,                   //被吞噬
+    Draw                    //势均力敌，互伤
+};
+
+/**
+ * @brief 变异等级
+ */
+enum class MutationLevel{Normal,Rare,Epic,Legend};
 
 /**
  * @brief 三大生命法则（策划第四章）
  */
-enum LifeLaw
+enum class LifeLaw
 {
     LAW_FISSION,    // 裂变法则
     LAW_SYMBIOSIS,  // 共生法则
@@ -57,7 +79,7 @@ enum LifeLaw
 /**
  * @brief 躯体解构等级（策划5.1 四级不可逆）
  */
-enum DecomposeLevel
+enum class DecomposeLevel
 {
     DECOMPOSE_NONE,     // 原生形态
     DECOMPOSE_LIGHT,    // 轻度解构
@@ -68,7 +90,7 @@ enum DecomposeLevel
 /**
  * @brief 演化素材类型
  */
-enum EvolutionMaterial
+enum class EvolutionMaterial
 {
     MATERIAL_ORGAN,
     MATERIAL_GENE,
@@ -79,7 +101,7 @@ enum EvolutionMaterial
 /**
  * @brief 共生模式
  */
-enum SymbiosisMode
+enum class SymbiosisMode
 {
     SYMBIO_TEMP,     // 临时寄生：限时存在，超时销毁
     SYMBIO_PERM,     // 永久共生：常驻族群
@@ -89,7 +111,7 @@ enum SymbiosisMode
 /**
  * @brief 基因排斥等级
  */
-enum RejectLevel
+enum class RejectLevel
 {
     REJECT_SAFE,     // 安全无惩罚
     REJECT_WARNING,  // 轻度排斥：属性衰减
@@ -97,7 +119,7 @@ enum RejectLevel
 };
 
 // ===================== 三、时空回溯枚举（策划5.3） =====================
-enum RollbackOperate
+enum class RollbackOperate
 {
     ROLLBACK_LAST,      // 回退上一节点
     ROLLBACK_ASSIGN     // 指定节点回溯
@@ -156,70 +178,9 @@ enum GeneStableState
 };
 
 // ===================== 八、配置读取接口（纯转发，无重复解析） =====================
-//全局窗口配置
-int getWindowWidth();
-int getWindowHeight();
-int getFPS();
-QString getWindowTitle();
-// 玩家配置
-qreal getPlayerSpeed();
-int getPlayerInitSize();
-int getPlayerMaxSize();
-int getGrowRatio();
-qreal getSpeedBuffMult();
-int getBuffDuration();
-qreal getDebuffMult();
-
-// 怪物配置
-int getMaxMonsterCount();
-int getBoundOffset();
-int getMonMinSize();
-int getMonMaxSize();
-qreal getMonSpeedRange();
-int getEliteMinSize();
-int getEliteMaxSize();
-qreal getEliteSpeedMult();
-qreal getSpecialSpeedMult();
-int getProbNormal();
-int getProbElite();
-int getProbSpecial();
-
-// 基因配置
-int getUnlockRangeNum();
-int getUnlockSpeedNum();
-int getUnlockGrowNum();
-qreal getGeneRangeRatio();
-qreal getGeneSpeedRatio();
-qreal getGeneGrowRatio();
 
 // 躯体解构配置
-qreal getLightDecomposeSpeedLoss();
-qreal getLightDecomposeCritGain();
-qreal getDeepDecomposeHPLoss();
-qreal getDeepDecomposeAtkGain();
-qreal getFullDecomposeExtremeAtk();
 int getDecomposeRisk(DecomposeLevel lv);
-
-// 共生体系配置
-int getMaxSymbiosisCount();
-int getSingleRejectValue();
-int getRejectWarningThreshold();
-int getRejectDangerThreshold();
-int getTempSymbiosisDuration();
-qreal getSymbiosisFollowRange();
-qreal getSymAttackRange();
-int getNormalSymAttack();
-int getEliteSymAttack();
-int getSpecialSymAttack();
-int getSymAttackCdMs();
-
-// 时空回溯 & 残影配置
-int getMaxHistoryNode();
-int getRollbackCostRisk();
-int getRollbackCostReject();
-int getGhostLifeTime();
-qreal getGhostAttackMult();
-
 } // namespace GameGlobal
 
 #endif // GAMEGLOBAL_H

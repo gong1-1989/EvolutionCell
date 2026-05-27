@@ -6,8 +6,9 @@ MainWindow::MainWindow(QWidget *parent)
     ,m_currSelectFile("")
 {
     ui->setupUi(this);
-    this->setFixedSize(GameGlobal::getWindowWidth(),GameGlobal::getWindowHeight());
-    this->setWindowTitle(GameGlobal::getWindowTitle());
+    this->setFixedSize(ConfigReader::getInstance().getInt("game_setting","width",1280),
+                       ConfigReader::getInstance().getInt("game_setting","height",720));
+    this->setWindowTitle(ConfigReader::getInstance().getString("game_setting","title","未知"));
     ui->stackedWidget->setCurrentWidget(ui->HomePage);
     ui->btnBackHome->setVisible(false);
     ui->tableSaveList->setColumnCount(3);

@@ -26,7 +26,7 @@ void GameManager::initScene(int canvasW, int canvasH)
     m_sceneInited = true;
 
     // 初始生成怪物
-    int maxMon = GameGlobal::getMaxMonsterCount();
+    int maxMon = ConfigReader::getInstance().getInt("monster_setting", "max_count", 18);
     for (int i = 0; i < maxMon; ++i)
         spawnMonster(canvasW, canvasH);
 
@@ -114,7 +114,8 @@ void GameManager::updateGhostSystem()
             MonsterCell& mon = m_monsterList[j];
             if (ghost.checkAttackHit(mon))
             {
-                m_player.grow(mon.getSize() / GameGlobal::getGrowRatio(), mon.getType());
+                m_player.grow(mon.getSize() / ConfigReader::getInstance().getInt("player_setting", "grow_ratio", 8)
+                              , mon.getType());
                 m_eatCount++;
                 if (mon.getType() == GameGlobal::NORMAL) m_normalEatNum++;
                 if (mon.getType() == GameGlobal::ELITE) m_eliteEatNum++;
@@ -132,7 +133,7 @@ void GameManager::updateRuleCheck(int canvasW, int canvasH)
 {
     checkEat(canvasW, canvasH);
     // 怪物数量不足则补充
-    int halfMax = GameGlobal::getMaxMonsterCount() / 2;
+    int halfMax = ConfigReader::getInstance().getInt("monster_setting", "max_count", 18)/ 2;
     if (m_monsterList.size() < halfMax)
         spawnMonster(canvasW, canvasH);
 }
@@ -151,7 +152,7 @@ void GameManager::checkSymbiosisAttack(int canvasW, int canvasH)
         for (auto& sym : symList)
         {
             if (!sym.canAttack(now)) continue;
-            qreal attackRange=GameGlobal::getSymAttackRange();
+            qreal attackRange=ConfigReader::getInstance().getDouble("symbiosis_setting", "attack_range", 30.0);
             bool hit = CollisionUtil::circleCollision(
                 sym.getX(), sym.getY(), attackRange,
                 mon.getX(), mon.getY(), mon.getSize() / 2.0
@@ -167,7 +168,8 @@ void GameManager::checkSymbiosisAttack(int canvasW, int canvasH)
         if (!beKilled) continue;
 
         // 吞噬收益
-        m_player.grow(mon.getSize() / GameGlobal::getGrowRatio(), mon.getType());
+        m_player.grow(mon.getSize() / ConfigReader::getInstance().getInt("player_setting", "grow_ratio", 8)
+                      , mon.getType());
         m_eatCount++;
         if (mon.getType() == GameGlobal::NORMAL) m_normalEatNum++;
         if (mon.getType() == GameGlobal::ELITE) m_eliteEatNum++;
@@ -223,7 +225,8 @@ void GameManager::checkEat(int canvasW, int canvasH)
             );
         if (hit)
         {
-            m_player.grow(mon.getSize() / GameGlobal::getGrowRatio(), mon.getType());
+            m_player.grow(mon.getSize() / ConfigReader::getInstance().getInt("player_setting", "grow_ratio", 8)
+                          , mon.getType());
             m_eatCount++;
             if (mon.getType() == GameGlobal::NORMAL) m_normalEatNum++;
             if (mon.getType() == GameGlobal::ELITE) m_eliteEatNum++;
@@ -253,8 +256,8 @@ void GameManager::checkEat(int canvasW, int canvasH)
 // ===================== 怪物生成 =====================
 void GameManager::spawnMonster(int canvasW, int canvasH)
 {
-    int probNormal = GameGlobal::getProbNormal();
-    int probElite = GameGlobal::getProbElite();
+    int probNormal = ConfigReader::getInstance().getInt("monster_setting", "prob_normal", 65);
+    int probElite = ConfigReader::getInstance().getInt("monster_setting", "prob_elite", 25);
     int rand = RandomUtil::randInt(1, 100);
 
     GameGlobal::MonsterType type;

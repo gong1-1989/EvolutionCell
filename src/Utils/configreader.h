@@ -41,21 +41,37 @@ public:
     // ===================== 通用读取接口（核心：消除重复代码） =====================
     /**
      * @brief 读取int类型配置
-     * @param obj 父节点对象
+     * @param group 父节点字段名
      * @param key 字段名
      * @param defVal 默认兜底值
      * @return 配置值
      */
-    int getInt(const QJsonObject& obj, const QString& key, int defVal = 0) const;
+    int getInt(const QString& group, const QString& key, int defVal = 0) const;
 
     /**
      * @brief 读取浮点型配置
+     * @param group 父节点字段名
+     * @param key 字段名
+     * @param defVal 默认兜底值
+     * @return 配置值
      */
-    qreal getDouble(const QJsonObject& obj, const QString& key, qreal defVal = 0.0) const;
+    qreal getDouble(const QString &group, const QString& key, qreal defVal = 0.0) const;
     /**
      * @brief 读取字符型配置
+     * @param group 父节点字段名
+     * @param key 字段名
+     * @param defVal 默认兜底值
+     * @return 配置值
      */
-    QString getString(const QJsonObject& obj,const QString& key,QString strVal)const;
+    QString getString(const QString& group,const QString& key,QString defVal="")const;
+    /**
+     * @brief 读取对象型数据
+     * @param group 父节点字段名
+     * @param key 字段名
+     * @param defVal 默认兜底值
+     * @return 数据
+     */
+    QJsonObject getSubObj(const QString& group, const QString& key, const QJsonObject &defVal={})const;
 
 private:
     ConfigReader() = default;

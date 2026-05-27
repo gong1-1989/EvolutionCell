@@ -3,12 +3,12 @@
 GameCanvas::GameCanvas(QWidget *parent)
     : QWidget(parent)
 {
-    setFixedSize(GameGlobal::getWindowWidth()-20,GameGlobal::getWindowHeight()-50);
+    setFixedSize(this->parentWidget()->width(),this->parentWidget()->height());
     setFocusPolicy(Qt::StrongFocus); // 捕获键盘焦点
 
     // 1. 帧定时器 60FPS ≈ 16ms/帧
     m_frameTimer = new QTimer(this);
-    m_frameTimer->setInterval(1000/GameGlobal::getFPS());
+    m_frameTimer->setInterval(1000/ConfigReader::getInstance().getInt("game_setting","fps",60));
     connect(m_frameTimer, &QTimer::timeout, this, &GameCanvas::onFrameUpdate);
     m_frameTimer->start();
 

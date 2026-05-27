@@ -91,7 +91,7 @@ void GameRender::drawHUD(QPainter* painter)
 
     // 2. 共生体数量
     int symNum = mgr.getPlayerSymbiosisNum();
-    int maxSym = GameGlobal::getMaxSymbiosisCount();
+    int maxSym = ConfigReader::getInstance().getInt("monster_setting", "max_count", 18);
     painter->drawText(baseX, offsetY, QString("共生体：%1 / %2").arg(symNum).arg(maxSym));
     offsetY += 20;
 
@@ -108,7 +108,7 @@ void GameRender::drawHUD(QPainter* painter)
 
     // 4. 时空节点 & 残影
     int nodeCnt = mgr.getHistoryNodeTotal();
-    int maxNode = GameGlobal::getMaxHistoryNode();
+    int maxNode = ConfigReader::getInstance().getInt("rollback_ghost_setting", "max_history_node", 8);
     painter->drawText(baseX, offsetY, QString("演化节点：%1 / %2").arg(nodeCnt).arg(maxNode));
     offsetY += 20;
 

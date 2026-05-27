@@ -71,7 +71,7 @@ void GhostCell::update(qreal playerX, qreal playerY, const QList<MonsterCell>& m
 
 bool GhostCell::isLifeExpired(qint64 nowTime) const
 {
-    return nowTime - m_bornTime > GameGlobal::getGhostLifeTime();
+    return nowTime - m_bornTime > ConfigReader::getInstance().getInt("rollback_ghost_setting", "ghost_life_time", 5000);
 }
 
 bool GhostCell::checkAttackHit(const MonsterCell& mon) const

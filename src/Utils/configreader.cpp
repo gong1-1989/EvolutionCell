@@ -44,31 +44,63 @@ QJsonObject ConfigReader::getRootConfig() const
     return m_rootCfg;
 }
 
-int ConfigReader::getInt(const QJsonObject& obj, const QString& key, int defVal) const
+int ConfigReader::getInt(const QString& group, const QString& key, int defVal) const
 {
+    if(!m_rootCfg.contains(group)||!m_rootCfg[group].isObject()){
+        qWarning()<<"配置字段异常group：" << group << "，使用默认值：" << defVal;
+        return defVal;
+    }
+    QJsonObject obj=m_rootCfg.value(group).toObject();
+    if (!obj.contains(key) || !obj[key].isDouble())
+    {
+        qWarning() << "配置字段异常key：" << key << "，使用默认值：" << defVal;
+        return defVal;
+    }
+    return obj[key].toInt();
+}
+
+qreal ConfigReader::getDouble(const QString& group, const QString& key, qreal defVal) const
+{
+    if(!m_rootCfg.contains(group)||!m_rootCfg[group].isObject()){
+        qWarning()<<"配置字段异常group：" << group << "，使用默认值：" << defVal;
+        return defVal;
+    }
+    QJsonObject obj=m_rootCfg.value(group).toObject();
     if (!obj.contains(key) || !obj[key].isDouble())
     {
         qWarning() << "配置字段异常：" << key << "，使用默认值：" << defVal;
         return defVal;
     }
-    return obj[key].toInt(defVal);
+    return obj[key].toDouble();
 }
 
-qreal ConfigReader::getDouble(const QJsonObject& obj, const QString& key, qreal defVal) const
+QString ConfigReader::getString(const QString &group, const QString& key, QString defVal)const
 {
-    if (!obj.contains(key) || !obj[key].isDouble())
-    {
-        qWarning() << "配置字段异常：" << key << "，使用默认值：" << defVal;
+    if(!m_rootCfg.contains(group)||!m_rootCfg[group].isObject()){
+        qWarning()<<"配置字段异常group：" << group << "，使用默认值：" << defVal;
         return defVal;
     }
-    return obj[key].toDouble(defVal);
-}
-
-QString ConfigReader::getString(const QJsonObject& obj,const QString& key,QString strVal)const{
+    QJsonObject obj=m_rootCfg.value(group).toObject();
     if (!obj.contains(key) || !obj[key].isString())
     {
-        qWarning() << "配置字段异常：" << key << "，使用默认值：" << strVal;
-        return strVal;
+        qWarning() << "配置字段异常：" << key << "，使用默认值：" << defVal;
+        return defVal;
     }
-    return obj[key].toString(strVal);
+    return obj[key].toString();
 }
+
+QJsonObject ConfigReader::getSubObj(const QString& group,const QString& key ,const QJsonObject& defVal)const
+{
+    if(!m_rootCfg.contains(group)||!m_rootCfg[group].isObject()){
+        qWarning()<<"配置字段异常group：" << group;
+        return defVal;
+    }
+    QJsonObject obj=m_rootCfg.value(group).toObject();
+    if (!obj.contains(key) || !obj[key].isObject())
+    {
+        qWarning() << "配置字段异常：" << key << "，使用默认值：" << defVal;
+        return defVal;
+    }
+    return obj[key].toObject();
+}
+

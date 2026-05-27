@@ -14,15 +14,15 @@ MonsterCell::MonsterCell()
 void MonsterCell::initMonster(GameGlobal::MonsterType type, int canvasW, int canvasH)
 {
     m_type = type;
-    int boundOffset = GameGlobal::getBoundOffset();
+    int boundOffset = ConfigReader::getInstance().getInt("monster_setting", "bound_offset", 30);
 
     // 随机位置（避开画布边界）
     m_pos.setX(RandomUtil::randInt(boundOffset, canvasW - boundOffset));
     m_pos.setY(RandomUtil::randInt(boundOffset, canvasH - boundOffset));
 
     // 随机基础大小
-    int minSize = GameGlobal::getMonMinSize();
-    int maxSize = GameGlobal::getMonMaxSize();
+    int minSize = ConfigReader::getInstance().getInt("monster_setting", "min_size", 8);
+    int maxSize = ConfigReader::getInstance().getInt("monster_setting", "max_size", 35);
     m_size = RandomUtil::randInt(minSize, maxSize);
 
     // 随机移动方向
@@ -35,20 +35,23 @@ void MonsterCell::initMonster(GameGlobal::MonsterType type, int canvasW, int can
     {
     case GameGlobal::NORMAL:
         m_color = QColor(60, 180, 60);
-        m_speed = GameGlobal::getMonSpeedRange() * 0.8;
+        m_speed = ConfigReader::getInstance().getDouble("monster_setting", "speed_max", 2.2) * 0.8;
         m_detectRange=150.0;    //普通怪物感知近
         break;
 
     case GameGlobal::ELITE:
         m_color = QColor(220, 180, 20);
-        m_size = RandomUtil::randInt(GameGlobal::getEliteMinSize(), GameGlobal::getEliteMaxSize());
-        m_speed = GameGlobal::getMonSpeedRange() * GameGlobal::getEliteSpeedMult();
+        m_size = RandomUtil::randInt(ConfigReader::getInstance().getInt("monster_setting", "elite_min_size", 22)
+                                     , ConfigReader::getInstance().getInt("monster_setting", "elite_max_size", 45));
+        m_speed = ConfigReader::getInstance().getDouble("monster_setting", "speed_max", 2.2)
+                  * ConfigReader::getInstance().getDouble("monster_setting", "elite_speed_mult", 1.3);
         m_detectRange=200.0;    //精英怪物感知更远
         break;
 
     case GameGlobal::SPECIAL:
         m_color = QColor(140, 60, 200);
-        m_speed = GameGlobal::getMonSpeedRange() * GameGlobal::getSpecialSpeedMult();
+        m_speed = ConfigReader::getInstance().getDouble("monster_setting", "speed_max", 2.2)
+                  * ConfigReader::getInstance().getDouble("monster_setting", "special_speed_mult", 1.5);
         m_detectRange=250.0;    //特殊怪物感知最远
         break;
     }
@@ -56,7 +59,7 @@ void MonsterCell::initMonster(GameGlobal::MonsterType type, int canvasW, int can
 
 void MonsterCell::move(int canvasW, int canvasH,qreal playerX,qreal playerY)
 {
-    int boundOffset = GameGlobal::getBoundOffset();
+    int boundOffset = ConfigReader::getInstance().getInt("monster_setting", "bound_offset", 30);
     qreal halfSize = m_size / 2.0;
 
     //==========================================================

@@ -77,12 +77,12 @@ bool SymbiosisCell::isTempExpired(qint64 currentTime) const
 {
     if (m_mode != GameGlobal::SYMBIO_TEMP)
         return false;
-    return currentTime - m_bornTime > GameGlobal::getTempSymbiosisDuration();
+    return currentTime - m_bornTime > ConfigReader::getInstance().getInt("symbiosis_setting", "temp_duration", 8000);
 }
 
 bool SymbiosisCell::canAttack(qint64 currentTime) const
 {
-    int cd = GameGlobal::getSymAttackCdMs();
+    int cd = ConfigReader::getInstance().getInt("symbiosis_setting", "attack_cd", 500);
     return (currentTime - m_lastAttackTime) >= cd;
 }
 
