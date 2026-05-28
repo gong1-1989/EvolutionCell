@@ -34,6 +34,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/eventbus.h src/eventbus.cpp
         src/Cell/organellfe.h src/Cell/organelle.cpp
         src/Cell/gene.h src/Cell/gene.cpp
+        src/cell/lineage.h src/cell/lineage.cpp
+        src/savelineage.h src/savelineage.cpp
 
     )
 # Define target properties for Android with Qt 6 as:

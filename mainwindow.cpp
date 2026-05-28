@@ -124,6 +124,7 @@ void MainWindow::on_tableSaveList_cellDoubleClicked(int row, int column)
 bool MainWindow::hasAnyValidSave(){
    // auto list=SaveManager::getInstance().getSaveFileList();
     //return !list.isEmpty();
+   return false;
 }
 void MainWindow::refreshSaveTable(){
    /* QList<QString> infoList=SaveManager::getInstance().getSaveFileList();

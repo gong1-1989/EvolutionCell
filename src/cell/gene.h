@@ -13,13 +13,14 @@ enum class MutateType{
     Neutral,                //中性突变
     Malignant               //恶性突变
 };
-
+class Cell;     //友元声明
 /**
  * @brief The GeneMgr class 基因突变系统、性状分类、恶性突变早衰规则
  */
 class GeneMgr : public QObject
 {
     Q_OBJECT
+    friend class Cell;  //允许Cell访问私有成员、函数
 public:
     explicit GeneMgr(QObject *parent = nullptr);
 

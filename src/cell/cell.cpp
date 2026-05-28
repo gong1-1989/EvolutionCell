@@ -12,6 +12,8 @@ Cell::Cell(QObject *parent)
 {
     //初始化细胞器分化管理器
     m_organelleMgr=new OrganelleMgr(this);
+    //初始化突变管理器
+    m_geneMgr=new GeneMgr(this);
     //随机出生位置
     int randX=RandomUtil::randInt(m_cellSize,1280-m_cellSize);
     int randY=RandomUtil::randInt(m_cellSize,720-m_cellSize);
@@ -36,17 +38,53 @@ void Cell::updateCell(qreal deltaTime){
         randomChangeDir();
         m_walkTime=0.0;
     }
-    //能量守恒（能量守恒法则：所有行为消耗能量）
-    m_energy-=m_baseEnerygyCost*deltaTime;
+    //============= AI行为树：优先级执行 ===============
+    //======= 优先级1：致命危险检测（暂占位，后续生态模块补充）======
+    //======= 优先级2：能量危机检测 ========
+    m_energy-=m_baseEnerygyCost*deltaTime;   //能量守恒（能量守恒法则：所有行为消耗能量）
+    //叠加早衰能耗
+    if(m_geneMgr->isPrematureAging()){
+        qreal addRate=m_geneMgr->getAgingEnergyAdd()/100.0;
+        m_energy-=m_baseEnerygyCost*addRate*deltaTime;
+    }
     //能量归零👉立即凋零（死亡）
     if(m_energy<=0.0){
         cellDie();
         return;
     }
-    //自主移动（基础生成行为）
+    //======== 优先级3：生态事件相应（暂占位） =========
+    //======== 优先级4：玩家指令相应（叠加引导权重，权限锁控制） =============
+    //======== 优先级5：跨层迁徙判定（暂占位） ==============
+    //======== 优先级6：自主演化：分化 + 突变 + 水平基因转移 =============
+    //6.1 细胞分化（结合玩家分化倾向）
+    if(!m_organelleMgr->reachDiffMaxLimit()){
+        //随机判定 + 玩家权重影响，AI自主决定是否分化
+        qreal diffRand=RandomUtil::randInt(0,10)/10.0;
+        if(diffRand<0.02+m_organelleMgr->getDiffTendency()){
+            //随机选择分化等级
+            int levelRand=RandomUtil::randInt(0,3);
+            DiffLevel level=static_cast<DiffLevel>(levelRand);
+            m_organelleMgr->doDifferentiate(level);
+            //推送分化事件
+            EventBus::getInstance()->dispatchEvent(GlobalEvent::EVT_CELL_DIFF);
+        }
+    }
+    //6.2 自发突变（AI自主触发）
+    MutateType mutTypr=m_geneMgr->doSpontaneousMutate();
+    if(mutTypr!=MutateType::Neutral){
+        EventBus::getInstance()->dispatchEvent(GlobalEvent::EVT_GENE_MUTATE);
+    }
+    //6.3 水平基因转移（异种接触后AI自主触发）
+    bool contactOther=false;        //后续群落模块补充真实接触判定
+    if(contactOther){
+        m_geneMgr->doHorizontalGeneTransfer();
+    }
+    //============= 优先级7：群落&种间关系（暂占位） ==========
+    //============= 优先级8：常规移动 ===============
+        //自主移动（基础生成行为）
     m_pos.rx()+=m_moveDir.x()*m_moveSpeed*deltaTime;
     m_pos.ry()+=m_moveDir.y()*m_moveSpeed*deltaTime;
-    //边界限制（防止移出窗口）
+        //边界限制（防止移出窗口）
     m_pos=Physics::clampCirclePos(m_pos,m_cellSize,1280,720);
 }
 
@@ -90,4 +128,12 @@ QJsonObject Cell::toJson() const
    /* QJsonObject obj;
     return obj;*/
     return QJsonObject();
+}
+
+OrganelleMgr* Cell::getOrganelleMgr()const{
+    return m_organelleMgr;
+}
+
+GeneMgr* Cell::getGeneMgr()const{
+    return m_geneMgr;
 }

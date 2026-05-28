@@ -34,7 +34,18 @@ struct Organelle
     bool isDiscarded;               //是否已被舍弃
     int powerLoss;                  //舍弃带来的属性损耗
     bool isIrreversible;            //是否永久不可逆
+};/**
+ * @brief The DiffRule class 分化规则单条配置
+ */
+struct DiffRule{
+    QString diffLevelName;
+    int reatinRate;                 //全能性保留比例
+    int consumeEnergy;              //单次分化能耗
+    QString allowOrganelle;         //允许跳转的细胞器范围
+    bool isEvolveIrreversible;
 };
+
+
 /**
  * @brief The OrganelleMgr class 细胞器实体+分化规则管理
  */
@@ -60,24 +71,26 @@ public:
      */
     int getDiffCount()const;
 
-    /**
-     * @brief setDiffTendency 玩家引导权重（带权限锁，仅叠加倾向）
-     * @param weight 玩家权重
-     */
-    void setDiffTendency(qreal weight);
-
+    int getDiffEnergYCost(DiffLevel level)const;
+    qreal getDIffBaseProb()const;
     /**
      * @brief loadDiffConfig 全局初始化
      * @param doc QJsonDocument数据
      */
     void loadDiffConfig(const QJsonDocument& doc);
+private slots:
+    /**
+     * @brief onSetDiffWeight 【事件订阅】接受上层指令，更新分化权重
+     * @param data
+     */
+    void onSetDiffWeight(const QVariant& data);
 private:
     /**
      * @brief doDifferentiate 执行细胞分化
      * @param level 分化等级
      * @return true=分化成功
      */
-    bool doDifferentiate(DiffLevel level);
+    bool doDifferentiate(DiffLevel level,qreal& cellEnergy);
 
     /**
      * @brief discardOrganelle 舍弃指定细胞器
@@ -92,12 +105,13 @@ private:
      */
     void setTotipotency(int val);
 
-    QJsonDocument m_diffRuleArr;
+    QList<DiffRule> m_diffRuleList;
     QList<Organelle> m_organelleList;
     int m_totipotency;                          //全性能
     int m_diffCount;                            //本局已分化次数
     const int m_maxDiffCount=8;                 //单局最大分化8次
     qreal m_diffTencyWeight;                    //玩家引导权重0-1.0（仅影响分化倾向，不直接触发）
+    qreal m_diffBaseProb;
 };
 
 #endif // ORGANELLFEH_H

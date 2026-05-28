@@ -11,6 +11,8 @@
 #include "jsonparser.h"
 #include "Utils/randomutil.h"
 #include "organellfe.h"
+#include "gene.h"
+#include "lineage.h"
 
 /**
  * @brief class Cell 细胞实体类，核心属性：能量、位置、移动、凋零
@@ -61,11 +63,22 @@ public:
      * @brief randomChangeDir 随机切换移动方向
      */
     void randomChangeDir();
+
     /**
      * @brief toJson 序列化接口：用与存档
      * @return QJsonObject数据
      */
     QJsonObject toJson() const;
+    /**
+     * @brief getOrganelleMgr 细胞器管理器 只读访问接口
+     * @return 私有指针
+     */
+    OrganelleMgr* getOrganelleMgr()const;
+    /**
+     * @brief getGeneMgr 基因管理器 只读访问接口
+     * @return 私有指针
+     */
+    GeneMgr* getGeneMgr()const;
 
 private:
     /**
@@ -83,6 +96,7 @@ private:
     qreal m_walkTime;                           //随机转向定时器
 
     OrganelleMgr* m_organelleMgr;               //细胞器&分化管理器
+    GeneMgr* m_geneMgr;                         //突变管理器
 
     /**
      * @brief The InteractMode enum 交互模式
