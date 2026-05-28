@@ -1,9 +1,9 @@
 #include "SaveManager.h"
 
-SaveManager& SaveManager::getInstance()
+SaveManager::SaveManager(QObject *parent)
+    :QObject(parent)
 {
-    static SaveManager ins;
-    return ins;
+    checkAndCreateDir();
 }
 
 QString SaveManager::getSaveDir() const
@@ -20,10 +20,10 @@ bool SaveManager::checkAndCreateDir() const
         bool ret = dir.mkdir(".");
         if (!ret)
         {
-            qWarning() << "存档目录创建失败！";
+            qWarning() << "[saveManager]:存档目录创建失败！";
             return false;
         }
-        qDebug() << "自动创建存档目录：" << getSaveDir();
+        qDebug() << "[saveManager]:自动创建存档目录：" << getSaveDir();
     }
     return true;
 }
@@ -41,7 +41,7 @@ QString SaveManager::createNewSave(const QJsonObject& rootData)
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        qWarning() << "创建存档文件失败：" << filePath;
+        qWarning() << "[saveManager newSave]:创建存档文件失败：" << filePath;
         return "";
     }
 
@@ -54,7 +54,7 @@ QString SaveManager::createNewSave(const QJsonObject& rootData)
     file.write(doc.toJson(QJsonDocument::Indented));
     file.close();
 
-    qDebug() << "存档成功：" << filePath;
+    qDebug() << "[saveManager newSave]:存档成功：" << filePath;
     return filePath;
 }
 
@@ -65,7 +65,7 @@ QJsonObject SaveManager::loadSave(const QString& filePath)
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        qWarning() << "读取存档失败，文件不存在：" << filePath;
+        qWarning() << "[saveManager loadSave]:读取存档失败，文件不存在：" << filePath;
         return emptyObj;
     }
 
@@ -75,7 +75,7 @@ QJsonObject SaveManager::loadSave(const QString& filePath)
     QJsonDocument doc = QJsonDocument::fromJson(fileData);
     if (doc.isNull() || !doc.isObject())
     {
-        qWarning() << "存档文件JSON格式损坏：" << filePath;
+        qWarning() << "[saveManager loadSave]:存档文件JSON格式损坏：" << filePath;
         return emptyObj;
     }
 
@@ -84,7 +84,7 @@ QJsonObject SaveManager::loadSave(const QString& filePath)
     QString ver = root["save_version"].toString("1.0");
     if (ver != m_saveVersion)
     {
-        qWarning() << "存档版本不匹配，当前版本：" << m_saveVersion << " 存档版本：" << ver;
+        qWarning() << "[saveManager loadSave]:存档版本不匹配，当前版本：" << m_saveVersion << " 存档版本：" << ver;
     }
 
     return root["game_data"].toObject();

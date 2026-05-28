@@ -3,6 +3,32 @@
         <file>Res/Sprite/cell.png</file>
     </qresource>
     <qresource prefix="/Config">
-        <file>Res/Config/game_config.json</file>
+        <file>Res/Config/ai_behavior.json</file>
+        <file>Res/Config/cell_base.json</file>
+        <file>Res/Config/chemotaxis_signal.json</file>
+        <file>Res/Config/ecology_event.json</file>
+        <file>Res/Config/environment_factor.json</file>
+        <file>Res/Config/evolution_style.json</file>
+        <file>Res/Config/gene_mutation.json</file>
+        <file>Res/Config/group_sense_biofilm.json</file>
+        <file>Res/Config/inter_species.json</file>
+        <file>Res/Config/lineage_tree.json</file>
+        <file>Res/Config/metabolism.json</file>
+        <file>Res/Config/migrate_rule.json</file>
+        <file>Res/Config/organelle_diff.json</file>
+        <file>Res/Config/README.md</file>
+        <file>Res/Config/supply_item.json</file>
+        <file>Res/Config/ui_tips.json</file>
+    </qresource>
+    <qresource prefix="/Text">
+        <file>Res/Text/archive_science.txt</file>
+        <file>Res/Text/cell_desc.txt</file>
+        <file>Res/Text/environment_event.txt</file>
+        <file>Res/Text/popular_science_tips.txt</file>
+        <file>Res/Text/relation_gene.txt</file>
+        <file>Res/Text/signal_mark_desc.txt</file>
+        <file>Res/Text/style_intro.txt</file>
+        <file>Res/Text/ui_tips.txt</file>
+        <file>Res/Text/world_intro.txt</file>
     </qresource>
 </RCC>

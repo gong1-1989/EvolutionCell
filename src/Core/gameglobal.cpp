@@ -13,9 +13,9 @@ int GameGlobal::getDecomposeRisk(DecomposeLevel lv)
 {
     switch (lv)
     {
-    case DECOMPOSE_LIGHT: return 10;
-    case DECOMPOSE_DEEP:  return 25;
-    case DECOMPOSE_FULL:  return 45;
+    case DecomposeLevel::DECOMPOSE_LIGHT: return 10;
+    case DecomposeLevel::DECOMPOSE_DEEP:  return 25;
+    case DecomposeLevel::DECOMPOSE_FULL:  return 45;
     default: return 0;
     }
 }

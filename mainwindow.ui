@@ -666,7 +666,7 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <widget class="GameCanvas" name="widgetCanvas" native="true">
+       <widget class="QWidget" name="widgetCanvas" native="true">
         <property name="geometry">
          <rect>
           <x>0</x>
@@ -707,14 +707,6 @@
    </layout>
   </widget>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>GameCanvas</class>
-   <extends>QWidget</extends>
-   <header>Utils/gamecanvas.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

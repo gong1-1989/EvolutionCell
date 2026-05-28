@@ -1,6 +1,7 @@
 #ifndef SAVEMANAGER_H
 #define SAVEMANAGER_H
 
+#include <QObject>
 #include <QString>
 #include <QList>
 #include <QJsonObject>
@@ -12,20 +13,18 @@
 #include <QDebug>
 
 /**
- * @brief 全局存档管理器（单例）
+ * @brief 存档管理器
  * 特性：
  * 1. 时间戳命名存档，无限存档槽位
  * 2. 存档根节点携带版本号，兼容新旧版本
  * 3. 自动创建存档目录、文件读写异常捕获
  * 4. 基于实体内置 toJson/fromJson 做统一序列化，消除冗余代码
  */
-class SaveManager
+class SaveManager : public QObject
 {
+    Q_OBJECT
 public:
-    // 单例模式
-    static SaveManager& getInstance();
-    SaveManager(const SaveManager&) = delete;
-    SaveManager& operator=(const SaveManager&) = delete;
+   explicit SaveManager(QObject *parent=nullptr);
 
     /**
      * @brief 创建新存档（时间戳命名）

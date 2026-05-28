@@ -2,7 +2,7 @@
 #define GAMEGLOBAL_H
 
 #include <QColor>
-#include "Utils/ConfigReader.h"
+//#include "Utils/ConfigReader.h"
 #include <QList>
 
 /**
