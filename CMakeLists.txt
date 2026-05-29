@@ -14,9 +14,6 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Core Gui Multimed
 include_directories(${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_SOURCES
         main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -24,18 +21,20 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         Res.qrc
-        src/Utils/randomutil.h
+        src/Global/GlobalDefine.h
+        src/Global/globaltool.h src/Global/globaltool.cpp
+        src/PluginInterface/PluginInterface.h
+        src/PluginManager/pluginmanager.h src/PluginManager/pluginmanager.cpp
+        src/ConfigParser/configparser.h src/ConfigParser/configparser.cpp
+        src/EventBus/eventbus.h src/EventBus/eventbus.cpp
         src/Cell/cell.h src/Cell/cell.cpp
-        src/gamecanvas.h src/gamecanvas.cpp
-        src/gametimer.h src/gametimer.cpp
-        src/jsonparser.h src/jsonparser.cpp
-        src/Utils/savemanager.cpp src/Utils/savemanager.h
-        src/physics.h src/physics.cpp
-        src/eventbus.h src/eventbus.cpp
-        src/Cell/organellfe.h src/Cell/organelle.cpp
-        src/Cell/gene.h src/Cell/gene.cpp
-        src/cell/lineage.h src/cell/lineage.cpp
-        src/savelineage.h src/savelineage.cpp
+        src/EcologyCore/ecologycore.h src/EcologyCore/ecologycore.cpp
+        src/Lineage/lineagemanager.h src/Lineage/lineagemanager.cpp
+        src/Interaction/interactionmanager.h src/Interaction/interactionmanager.cpp
+        src/Render/rendercore.h src/Render/rendercore.cpp
+        src/MainWindow/mainwindow.h src/MainWindow/mainwindow.cpp
+        src/MainWindow/mainwindow.ui
+        src/Global/logtool.h src/Global/logtool.cpp
 
     )
 # Define target properties for Android with Qt 6 as:

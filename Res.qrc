@@ -3,22 +3,28 @@
         <file>Res/Sprite/cell.png</file>
     </qresource>
     <qresource prefix="/Config">
-        <file>Res/Config/ai_behavior.json</file>
+        <file>Res/Config/README.md</file>
+        <file>Res/Config/ai_runtime.json</file>
         <file>Res/Config/cell_base.json</file>
         <file>Res/Config/chemotaxis_signal.json</file>
+        <file>Res/Config/difficulty_mode.json</file>
         <file>Res/Config/ecology_event.json</file>
-        <file>Res/Config/environment_factor.json</file>
+        <file>Res/Config/environment_layer.json</file>
         <file>Res/Config/evolution_style.json</file>
+        <file>Res/Config/gamesetting.json</file>
+        <file>Res/Config/gene_library.json</file>
         <file>Res/Config/gene_mutation.json</file>
-        <file>Res/Config/group_sense_biofilm.json</file>
+        <file>Res/Config/gene_template.json</file>
+        <file>Res/Config/global_rule.json</file>
+        <file>Res/Config/group_biofilm.json</file>
         <file>Res/Config/inter_species.json</file>
-        <file>Res/Config/lineage_tree.json</file>
+        <file>Res/Config/lineage_save.json</file>
         <file>Res/Config/metabolism.json</file>
-        <file>Res/Config/migrate_rule.json</file>
+        <file>Res/Config/migrate_matter.json</file>
         <file>Res/Config/organelle_diff.json</file>
-        <file>Res/Config/README.md</file>
         <file>Res/Config/supply_item.json</file>
-        <file>Res/Config/ui_tips.json</file>
+        <file>Res/Config/ui_style_tips.json</file>
+        <file>Res/Config/visual_effect.json</file>
     </qresource>
     <qresource prefix="/Text">
         <file>Res/Text/archive_science.txt</file>
@@ -30,5 +36,8 @@
         <file>Res/Text/style_intro.txt</file>
         <file>Res/Text/ui_tips.txt</file>
         <file>Res/Text/world_intro.txt</file>
+    </qresource>
+    <qresource prefix="/main">
+        <file>README.md</file>
     </qresource>
 </RCC>
