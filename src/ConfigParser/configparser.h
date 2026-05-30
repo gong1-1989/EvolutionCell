@@ -27,6 +27,7 @@ public:
     void LoadAllConfig();
 
     // ===================== 对外读取接口（按配置文件顺序对应） =====================
+    Global::GameSetting GetGameSetting() const;
     QVector<Global::CellBaseProp> GetCellBaseConfig() const;
     Global::MigrateRule GetMigrateRuleConfig() const;
     QJsonArray GetEcoLayerConfig() const;
@@ -48,6 +49,7 @@ private:
     static ConfigParser* m_instance;
 
     // 15份配置私有加载函数
+    void LoadGameSetting();
     void LoadCellBase();
     void LoadMigrateRule();
     void LoadEnvFactor();
@@ -65,6 +67,7 @@ private:
     void LoadChemotaxisSignal();
 
     // 配置缓存容器
+    Global::GameSetting             m_gameSet;
     QVector<Global::CellBaseProp>   m_cellBaseList;
     Global::MigrateRule             m_migrateRule;
     QJsonArray                      m_ecoLayerArr;

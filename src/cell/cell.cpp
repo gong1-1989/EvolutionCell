@@ -109,7 +109,7 @@ void Cell::InitCell(int cellId, int layerId, QPointF spawnPos, const QVector<Glo
 
 // ===================== AI主更新（帧率分级优化） =====================
 void Cell::AIUpdate(int frameCount, bool isActive, int groupMemberCount
-                    , double nicheOverlap, const Global::EnvFactor& layerEnv)
+                    , double nicheOverlap)
 {
     // 非活跃细胞降频至15FPS，减少运算量
     if (!isActive && (frameCount % 2 != 0))
@@ -232,7 +232,7 @@ void Cell::UpdateInterSpeciesRelation()
 }
 
 // 5. 趋化优先级移动
-void Cell::ChemotaxisPriorityMove(const Global::EnvFactor &layerEnv)
+void Cell::ChemotaxisPriorityMove()
 {
     if (m_cellState == Global::CellState::DangerEvade)
     {

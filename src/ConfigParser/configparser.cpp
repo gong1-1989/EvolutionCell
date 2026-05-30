@@ -16,7 +16,8 @@ ConfigParser* ConfigParser::GetInstance()
 void ConfigParser::LoadAllConfig()
 {
     LOG_INFO(MODULE_NAME, "开始加载全部15份JSON配置文件");
-    // 按依赖顺序加载：基础属性 → 生态 → 演化 → 玩法 → UI
+    // 按依赖顺序加载：系统设置 → 细胞基础属性 → 生态 → 演化 → 玩法 → UI
+    LoadGameSetting();
     LoadCellBase();
     LoadMigrateRule();
     LoadEnvFactor();
@@ -33,6 +34,36 @@ void ConfigParser::LoadAllConfig()
     LoadUiTips();
     LoadChemotaxisSignal();
     LOG_INFO(MODULE_NAME, "所有配置文件加载完成");
+}
+//0.新增
+void ConfigParser::LoadGameSetting(){
+    QString path = GlobalTool::GetConfigPath() + "gameWindow.json";
+    QString jsonContent = GlobalTool::ReadUtf8File(path);
+
+    // 文件内容为空，启用兜底配置
+    if (jsonContent.isEmpty())
+    {
+        LOG_WARN(MODULE_NAME, "gameWindow.json 内容为空，系统将使用默认格式");
+        return;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(jsonContent.toUtf8());
+    if (!doc.isObject())
+    {
+        LOG_ERR(MODULE_NAME, "gameWindow.json 格式错误，使用默认格式");
+        return;
+    }
+    QJsonObject obj = doc.object();
+    m_gameSet.fps=obj.value("刷新频率").toInt(60);
+    m_gameSet.title=obj.value("游戏名字").toString("未知");
+    QJsonArray sizeArr=obj.value("窗口尺寸").toArray();
+    m_gameSet.windowSize.clear();
+    for(const QJsonValue& val:sizeArr){
+        QSize win;
+        win.setWidth(val.toObject()["宽度"].toInt(960));
+        win.setHeight(val.toObject()["高度"].toInt(640));
+        m_gameSet.windowSize.append(win);
+    }
 }
 
 // 1. 细胞基础配置 cell_base.json
@@ -240,6 +271,7 @@ void ConfigParser::LoadChemotaxisSignal()
 }
 
 // 对外接口实现
+Global::GameSetting ConfigParser::GetGameSetting() const{ return m_gameSet;}
 QVector<Global::CellBaseProp> ConfigParser::GetCellBaseConfig() const { return m_cellBaseList; }
 Global::MigrateRule ConfigParser::GetMigrateRuleConfig() const { return m_migrateRule; }
 QJsonArray ConfigParser::GetEcoLayerConfig() const { return m_ecoLayerArr; }

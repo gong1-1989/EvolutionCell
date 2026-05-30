@@ -6,10 +6,17 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_globalFrameCount(0)
+    ,m_title("未知")
+    ,m_fps(60)
+    ,m_size(960,640)
 {
     ui->setupUi(this);
-    this->setWindowTitle("进化亿重奏：细胞纪元 V5.0");
-    this->resize(1280, 720);
+    Global::GameSetting newGameSet=ConfigParser::GetInstance()->GetGameSetting();
+    m_title=newGameSet.title;
+    m_size=newGameSet.windowSize[0];
+    m_fps=newGameSet.fps;
+    this->setWindowTitle(m_title);
+    this->resize(m_size);
     LOG_INFO(MODULE_NAME, "主窗口创建完成，窗口尺寸 1280x720");
 
     // 1. 初始化渲染器，绑定窗口可视区域
@@ -29,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::OnGameOver);
     // 6. 启动60FPS全局定时器（16ms一帧）
     m_frameTimer = new QTimer(this);
-    m_frameTimer->setInterval(16);
+    m_frameTimer->setInterval(1000/m_fps);
     connect(m_frameTimer, &QTimer::timeout, this, &MainWindow::OnGlobalFrameUpdate);
     m_frameTimer->start();
     LOG_INFO(MODULE_NAME, "60FPS全局帧循环定时器启动成功");

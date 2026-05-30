@@ -72,6 +72,9 @@ private:
     void ResetCurrentRound();
 
     const QString MODULE_NAME = "主窗口&主循环";
+    QSize m_size;
+    QString m_title;
+    int m_fps;
 };
 
 #endif // MAINWINDOW_H
