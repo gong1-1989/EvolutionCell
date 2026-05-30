@@ -139,12 +139,13 @@ void Cell::AIUpdate(int frameCount, bool isActive, int groupMemberCount
 // 1. 多洛演化不可逆法则
 void Cell::DiscardOrganelle(Global::OrganelleType type)
 {
-    m_organelleList.removeOne(type);
+
     // 舍弃核心细胞器，全能性大幅下降
-    if (type == Global::OrganelleType::Core_Nucleus
-        || type == Global::OrganelleType::Core_Mitochondria
-        || type == Global::OrganelleType::Core_Chloroplast)
+    if ((type == Global::OrganelleType::Core_Nucleus
+         || type == Global::OrganelleType::Core_Mitochondria
+         || type == Global::OrganelleType::Core_Chloroplast)&&m_allRoundness>35)
     {
+        m_organelleList.removeOne(type);
         m_allRoundness -= 35.0;
         LOG_WARN(MODULE_NAME, QString("细胞舍弃核心细胞器，全能性下降，演化不可逆"));
     }
@@ -235,17 +236,29 @@ void Cell::UpdateInterSpeciesRelation()
 // 5. 趋化优先级移动
 void Cell::ChemotaxisPriorityMove()
 {
+    //====增加随机方向（临时）=====
+    qreal dx=QRandomGenerator::global()->bounded(-1,2);
+    qreal dy=QRandomGenerator::global()->bounded(-1,2);
+    qreal dist=qSqrt(dx*dx+dy*dy);
+    if(dist>0){
+        dx/=dist;
+        dy/=dist;
+    }
+    //======= 临时代码 end =====
     if (m_cellState == Global::CellState::DangerEvade)
     {
-        m_worldPos.rx() += m_baseProp.moveSpeed * 0.18;
+        m_worldPos.rx() += m_baseProp.moveSpeed * 0.18 * dx;
+        m_worldPos.ry() += m_baseProp.moveSpeed * 0.18 * dy;
         return;
     }
     if (m_cellState == Global::CellState::EnergyLack)
     {
-        m_worldPos.rx() += m_baseProp.moveSpeed * 0.15;
+        m_worldPos.rx() += m_baseProp.moveSpeed * 0.15 * dx;
+        m_worldPos.ry() += m_baseProp.moveSpeed * 0.15 * dy;
         return;
     }
-    m_worldPos.rx() += m_baseProp.moveSpeed * 0.10;
+    m_worldPos.rx() += m_baseProp.moveSpeed * 0.11 * dx;
+    m_worldPos.ry() += m_baseProp.moveSpeed * 0.11 * dy;
 }
 
 // 6. 群体感应法则

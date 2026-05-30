@@ -153,7 +153,7 @@ void ConfigParser::LoadMigrateRule()
     m_migrateRule.nutriThresh = obj["营养匮乏阈值(%)"].toDouble(20.0);
     m_migrateRule.dangerThresh = obj["危险避险阈值(%)"].toDouble(80.0);
     m_migrateRule.densityThresh = obj["种群过载阈值(%)"].toDouble(80.0);
-    m_migrateRule.moveTimeSec = obj["跨层耗时(秒)"].toInt(8);
+    m_migrateRule.moveTimeSec = obj["跨层移动耗时(秒)"].toInt(8);
     m_migrateRule.energyAddRate = obj["迁徙能耗增幅(%)"].toInt(20);
     m_migrateRule.aerobicMaxStaySec = obj["光合菌群无光层最长停留(秒)"].toInt(15);
 }

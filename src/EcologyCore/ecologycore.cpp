@@ -38,18 +38,26 @@ void EcologyCore::InitEcology()
         // 读取配置，字段缺失使用结构体默认值
         env.minTemp = obj["温度下限"].toDouble(env.minTemp);
         env.maxTemp = obj["温度上限"].toDouble(env.maxTemp);
+        env.temp=Global::randomDouble(env.minTemp,env.maxTemp);
         env.minpH = obj["pH下限"].toDouble(env.minpH);
         env.maxpH = obj["pH上限"].toDouble(env.maxpH);
+        env.pH=Global::randomDouble(env.minpH,env.maxpH);
         env.minOxygen = obj["溶氧量下限(%)"].toDouble(env.minOxygen);
         env.maxOxygen = obj["溶氧量上限(%)"].toDouble(env.maxOxygen);
+        env.oxygen=Global::randomDouble(env.minOxygen,env.maxOxygen);
         env.minOsmotic = obj["渗透压下限(%)"].toDouble(env.minOsmotic);
         env.maxOsmotic = obj["渗透压上限(%)"].toDouble(env.maxOsmotic);
+        env.osmotic=Global::randomDouble(env.minOsmotic,env.maxOsmotic);
         env.minToxin = obj["毒素下限(%)"].toDouble(env.minToxin);
         env.maxToxin = obj["毒素上限(%)"].toDouble(env.maxToxin);
+        env.toxin=Global::randomDouble(env.minToxin,env.maxToxin);
         env.minNutrition = obj["营养下限(%)"].toDouble(env.minNutrition);
         env.maxNutrition = obj["营养上限(%)"].toDouble(env.maxNutrition);
+        env.nutrition=Global::randomDouble(env.minNutrition,env.maxNutrition);
+        //横向地貌修正所在层级环境
+        CalcLandformEffect(i);
         // 初始截断数值，保证合规
-        ClampEnvValue(env);
+        ClampEnvValue(env,i);
         loadCount++;
     }
 
@@ -60,18 +68,14 @@ void EcologyCore::EcologyUpdate(int frameCount)
 {
     Q_UNUSED(frameCount);
 
-    // 1. 横向地貌修正所有层级环境
+    // 1. 自然衰减：营养、毒素、氧气每帧?缓慢下降0.01
     for (int layer = 1; layer <= 8; ++layer)
     {
         Global::EnvFactor& env=m_layerEnvList[layer];
-        //自然衰减：营养、毒素、氧气每帧缓慢下降0.01
         const double decayRate=0.99;
-        env.minNutrition*=decayRate;
-        env.minOsmotic*=decayRate;
-        env.minToxin*=decayRate;
-
-        CalcLandformEffect(layer);
-        ClampEnvValue(m_layerEnvList[layer]);
+        env.nutrition*=decayRate;
+        env.oxygen*=decayRate;
+        env.toxin*=decayRate;
     }
 
     // 2. 层间物质自上而下传导
@@ -106,17 +110,17 @@ Global::EcoStage EcologyCore::GetGlobalEcoStage() const
 void EcologyCore::CalcLandformEffect(int layerId)
 {
     // 随机选取6类横向地貌，对环境进行随机3.0~8.0小幅修正
-    double_t randMod=QRandomGenerator::global()->bounded(30,80)/10.0;
+    double_t randMod=Global::randomDouble(3,8);
     int landType = QRandomGenerator::global()->bounded(0, 6);
     Global::EnvFactor& env = m_layerEnvList[layerId];
 
     switch (landType)
     {
-    case 0: env.minNutrition += randMod; break;    // 富营养地貌
-    case 1: env.minTemp += randMod; break;        // 高温地貌
-    case 2: env.minOxygen -= randMod; break;      // 低氧地貌
-    case 3: env.minToxin += randMod; break;       // 有毒地貌
-    case 4: env.minOsmotic += randMod; break;     // 高渗透压地貌
+    case 0: env.nutrition += randMod; break;    // 富营养地貌
+    case 1: env.temp += randMod; break;        // 高温地貌
+    case 2: env.oxygen -= randMod; break;      // 低氧地貌
+    case 3: env.toxin += randMod; break;       // 有毒地貌
+    case 4: env.osmotic += randMod; break;     // 高渗透压地貌
     case 5: break;                         // 普通地貌，无修正
     }
 }
@@ -124,22 +128,29 @@ void EcologyCore::CalcLandformEffect(int layerId)
 void EcologyCore::TransmitBetweenLayer()
 {
     // 规则：物质从上层向下层传导，传导比例10%
-    const double transmitRate = 0.1;
-    // 规则： 每层消耗5%的物质
-    const double consumeRate=0.05;
-    // 从顶层8向底层1倒序遍历
-    for (int layer = 8; layer > 1; --layer)
+    const double transmitRate = 0.1/60.0;
+    // 规则： 每层多消耗5%的物质
+    const double consumeRate=0.05/60.0;
+    // 从顶层1向底层8倒序遍历
+    for (int layer = 1; layer <=8; ++layer)
     {
         Global::EnvFactor& currLayer = m_layerEnvList[layer];
         Global::EnvFactor& upLayer = m_layerEnvList[layer - 1];
-
-        upLayer.minNutrition += currLayer.minNutrition * transmitRate;
-        upLayer.minToxin += currLayer.minToxin * transmitRate;
-        upLayer.minOxygen += currLayer.minOxygen * transmitRate;
-
-        currLayer.minNutrition*=(1-consumeRate);
-        currLayer.minToxin*=(1-consumeRate);
-        currLayer.minOxygen*=(1-consumeRate);
+        //本层营养浓度＞本层上限 && 本层营养浓度＞下层浓度才向下传导
+        if(currLayer.nutrition>currLayer.maxNutrition && currLayer.nutrition>upLayer.nutrition){
+            upLayer.nutrition += currLayer.nutrition * transmitRate;
+            currLayer.nutrition*=(1-consumeRate-transmitRate);
+        }
+        //本层毒素浓度＞本层上限 && 本层毒素浓度＞下层浓度才向下传导
+        if(currLayer.toxin>currLayer.maxToxin && currLayer.toxin>upLayer.toxin){
+            upLayer.toxin += currLayer.toxin * transmitRate;
+            currLayer.toxin*=(1-consumeRate-transmitRate);
+        }
+        //本层氧气浓度＞本层上限 && 本层氧气浓度＞下层浓度才向下传导
+        if(currLayer.oxygen>currLayer.maxOxygen && currLayer.oxygen>upLayer.oxygen){
+            upLayer.oxygen += currLayer.oxygen * transmitRate;
+            currLayer.oxygen*=(1-consumeRate-transmitRate);
+        }
     }
 }
 
@@ -159,12 +170,12 @@ void EcologyCore::ArchaeaLayerFluctuate()
 
     // 仅古菌层（第8层）温度、渗透压、毒素产生波动
     Global::EnvFactor& archaeaEnv = m_layerEnvList[8];
-    archaeaEnv.minTemp *= (1 + fluctRatio);
-    archaeaEnv.minOsmotic *= (1 + fluctRatio);
-    archaeaEnv.minToxin *= (1 + fluctRatio);
+    archaeaEnv.temp *= (1 + fluctRatio);
+    archaeaEnv.osmotic *= (1 + fluctRatio);
+    archaeaEnv.toxin *= (1 + fluctRatio);
 
     // 数值截断并输出日志
-    ClampEnvValue(archaeaEnv);
+    ClampEnvValue(archaeaEnv,8);
     LOG_DBG(MODULE_NAME, "古菌层触发周期性环境波动");
 }
 
@@ -172,9 +183,9 @@ void EcologyCore::CalcInterfaceBonus()
 {
     // 第一层为气-水交界面，营养、溶氧量获得固定加成
     Global::EnvFactor& layer1 = m_layerEnvList[1];
-    layer1.minNutrition *= 1.10;
-    layer1.minOxygen *= 1.15;
-    ClampEnvValue(layer1);
+    layer1.nutrition *= (1.0+0.1/60.0);
+    layer1.oxygen *= (1.0+0.15/60.0);
+    ClampEnvValue(layer1,1);
 }
 
 void EcologyCore::UpdateEcoSuccessionStage()
@@ -183,7 +194,7 @@ void EcologyCore::UpdateEcoSuccessionStage()
     double totalNutrition = 0.0;
     for (int i = 1; i <= 8; ++i)
     {
-        totalNutrition += m_layerEnvList[i].minNutrition;
+        totalNutrition += m_layerEnvList[i].nutrition;
     }
     double avgNut = totalNutrition / 8.0;
 
@@ -213,25 +224,25 @@ void EcologyCore::UpdateEcoSuccessionStage()
     }
 }
 
-void EcologyCore::ClampEnvValue(Global::EnvFactor& factor)
+void EcologyCore::ClampEnvValue(Global::EnvFactor& factor, int layer)
 {
     // 百分比类参数强制限制 0 ~ 100
-    auto clamp = [](double& val)
+    auto clamp = [](double& val,const QString& type,int layer)
     {
         if (val < 0.0)
         {
             val = 0.0;
-            LOG_WARN("生态数值截断", "环境参数低于下限，已修正为0");
+            LOG_WARN("生态数值截断", QString("第%1层环境参数:%2低于下限，已修正为0").arg(layer).arg(type));
         }
         else if (val > 100.0)
         {
             val = 100.0;
-            LOG_WARN("生态数值截断", "环境参数超出上限，已修正为100");
+            LOG_WARN("生态数值截断", QString("第%1层环境参数:%2高于上限，已修正为100").arg(layer).arg(type));
         }
     };
 
-    clamp(factor.minOxygen);
-    clamp(factor.minOsmotic);
-    clamp(factor.minToxin);
-    clamp(factor.minNutrition);
+    clamp(factor.oxygen,"氧气",layer);
+    clamp(factor.osmotic,"渗透压",layer);
+    clamp(factor.toxin,"毒素浓度",layer);
+    clamp(factor.nutrition,"营养物浓度",layer);
 }

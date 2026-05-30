@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <QDateTime>
 #include <QSize>
+#include <QRandomGenerator>
 // 引入日志模块，全局所有模块共用日志
 #include "LogTool.h"
 
@@ -138,23 +139,21 @@ enum class OrganelleType : int
      */
 struct CellBaseProp
 {
-    int cellID;                  // 细胞模板编号
-    QString cellName;            // 细胞名称
-    EvolveMainLine mainLine;     // 所属演化主干
-    double initEnergy;           // 初始能量
-    double energyPerSec;         // 每秒基础能耗
-    double moveSpeed;            // 移动速度
-    int pixelSize;               // 绘制像素尺寸
-    int maxDiffCount;            // 单局最大分化次数（全局上限8）
-    int toxinResist;             // 毒素抗性
-    int tempResist;              // 高温抗性
-    int osmoticResist;           // 渗透压抗性
-    double energyWarningThresh;  // 能量预警阈值
-    double sporeDangerThresh;    // 触发孢子休眠的危险阈值
-    int sporeProb;               // 孢子触发概率 %
-    bool energyDieImmediately;   // 能量耗尽是否立即凋亡
-
-    CellBaseProp() : cellID(0), mainLine(EvolveMainLine::Common) {}
+    int cellID=1;                  // 细胞模板编号
+    QString cellName="";            // 细胞名称
+    EvolveMainLine mainLine=EvolveMainLine::Common;     // 所属演化主干
+    double initEnergy=100;           // 初始能量
+    double energyPerSec=0.2;         // 每秒基础能耗
+    double moveSpeed=2.5;            // 移动速度
+    int pixelSize=32;               // 绘制像素尺寸
+    int maxDiffCount=8;            // 单局最大分化次数（全局上限8）
+    int toxinResist=10;             // 毒素抗性
+    int tempResist=15;              // 高温抗性
+    int osmoticResist=12;           // 渗透压抗性
+    double energyWarningThresh=20;  // 能量预警阈值
+    double sporeDangerThresh=70;    // 触发孢子休眠的危险阈值
+    int sporeProb=30;               // 孢子触发概率 %
+    bool energyDieImmediately=true;   // 能量耗尽是否立即凋亡
 };
 
 /**
@@ -178,27 +177,29 @@ struct diffMode
      */
 struct EnvFactor
 {
-    int id;                         // 层级编号
-    QString name;                   // 层级名称
-    int dangerLevel;                // 危险等级
-    qint64 successionCycle ;        // 演替周期(秒)
-    qreal rangeNum;                 // 数值波动幅度(%)
-    double minTemp;                 // 温度区间-最小
-    double maxTemp;                 // 温度区间-最大
-    double minpH;                   // pH值区间-最小
-    double maxpH;                   // pH值区间-最大
-    double minOxygen;               // 溶氧量区间(%)-最小
-    double maxOxygen;               // 溶氧量区间(%)-最大
-    double minOsmotic;              // 渗透压区间(%)-最小
-    double maxOsmotic;              // 渗透压区间(%)-最大
-    double minToxin;                // 毒素浓度区间(%)-最小
-    double maxToxin;                // 毒素浓度区间(%)-最大
-    double minNutrition;            // 营养浓度区间(%)-最小
-    double maxNutrition;            // 营养浓度区间(%)-最大
-
-    // 构造函数：初始化兜底默认值
-    EnvFactor() : minTemp(20),maxTemp(28), minpH(6.5),maxpH(7.5), minOxygen(80),maxOxygen(95)
-        , minOsmotic(10),maxOsmotic(20), minToxin(0),maxToxin(10), minNutrition(70), maxNutrition(90) {}
+    int id=1;                         // 层级编号
+    QString name="";                   // 层级名称
+    int dangerLevel=1;                // 危险等级
+    qint64 successionCycle=1800;        // 演替周期(秒)
+    qreal rangeNum=5;                 // 数值波动幅度(%)
+    double minTemp=20;                 // 温度区间-最小
+    double maxTemp=28;                 // 温度区间-最大
+    double temp;                    // 当前温度（不加载，每次开局从区间随机）
+    double minpH=6.5;                   // pH值区间-最小
+    double maxpH=7.5;                   // pH值区间-最大
+    double pH;                      // 当前pH（不加载，每次开局从区间随机）
+    double minOxygen=80;               // 溶氧量区间(%)-最小
+    double maxOxygen=95;               // 溶氧量区间(%)-最大
+    double oxygen;                  // 当前溶氧量（不加载，每次开局从区间随机）
+    double minOsmotic=10;              // 渗透压区间(%)-最小
+    double maxOsmotic=20;              // 渗透压区间(%)-最大
+    double osmotic;                 // 渗透压（不加载，每次开局从区间随机）
+    double minToxin=0;                // 毒素浓度区间(%)-最小
+    double maxToxin=10;                // 毒素浓度区间(%)-最大
+    double toxin;                   // 毒素浓度（不加载，每次开局从区间随机）
+    double minNutrition=70;            // 营养浓度区间(%)-最小
+    double maxNutrition=90;            // 营养浓度区间(%)-最大
+    double nutrition;               // 营养浓度（不加载，每次开局从区间随机）
 };
 
 /**
@@ -256,12 +257,12 @@ struct InterSpecies{
 
 // 迁徙规则
 struct MigrateRule {
-    qreal nutriThresh;    // 营养匮乏阈值(%)
-    qreal dangerThresh;         // 危险避险阈值(%)
-    qreal densityThresh;   // 种群过载阈值(%)
-    int moveTimeSec;        // 跨层耗时(秒)
-    int energyAddRate;      // 能迁徙能耗增幅(%)
-    int aerobicMaxStaySec;  // 光合菌群无光层最长停留(秒)
+    qreal nutriThresh=20;    // 营养匮乏阈值(%)
+    qreal dangerThresh=80;         // 危险避险阈值(%)
+    qreal densityThresh=80;   // 种群过载阈值(%)
+    int moveTimeSec=8;        // 跨层耗时(秒)
+    int energyAddRate=20;      // 能迁徙能耗增幅(%)
+    int aerobicMaxStaySec=15;  // 光合菌群无光层最长停留(秒)
 };
 
 
@@ -282,6 +283,14 @@ inline double CalcMetabolismEff(double baseEff, double missDegree)
 inline double CalcDeathRate(double baseRate, double missDegree)
 {
     return baseRate * (1.0 + missDegree * 0.08);
+}
+
+inline qreal randomDouble(qreal a,qreal b){
+    if(a>b){
+        qSwap(a,b);
+    }
+    if(a==b)return a;
+    return a+QRandomGenerator::global()->generateDouble()*(b-a);
 }
 
 // ===================== 四、全局常量（JSON读取失败时的兜底阈值） =====================

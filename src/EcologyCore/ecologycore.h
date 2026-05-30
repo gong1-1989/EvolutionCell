@@ -92,7 +92,7 @@ private:
      * @brief 环境数值边界截断（强制限制 0~100，防止数值溢出）
      * @param factor 待截断的环境参数结构体
      */
-    void ClampEnvValue(Global::EnvFactor& factor);
+    void ClampEnvValue(Global::EnvFactor& factor,int layer);
 };
 
 #endif // ECOLOGYCORE_H
