@@ -7,7 +7,7 @@ Cell::Cell(QObject *parent)
     m_groupId(-1),
     m_curEnergy(100.0),
     m_metabEff(100.0),
-    m_deathRate(1.0),
+    m_deathRate(0.0),
     m_cellState(Global::CellState::Normal),
     m_diffCount(0),
     m_allRoundness(100.0),
@@ -105,11 +105,12 @@ void Cell::InitCell(int cellId, int layerId, QPointF spawnPos, const QVector<Glo
 
     LOG_INFO(MODULE_NAME, QString("细胞[%1] 初始化完成，唯一ID：%2，所属层级：%3")
                               .arg(m_baseProp.cellName).arg(m_uniqueId).arg(m_currentLayer));
+    m_deathRate = 0.0;
 }
 
 // ===================== AI主更新（帧率分级优化） =====================
 void Cell::AIUpdate(int frameCount, bool isActive, int groupMemberCount
-                    , double nicheOverlap, const Global::EnvFactor& layerEnv)
+                    , double nicheOverlap)
 {
     // 非活跃细胞降频至15FPS，减少运算量
     if (!isActive && (frameCount % 2 != 0))
@@ -232,7 +233,7 @@ void Cell::UpdateInterSpeciesRelation()
 }
 
 // 5. 趋化优先级移动
-void Cell::ChemotaxisPriorityMove(const Global::EnvFactor &layerEnv)
+void Cell::ChemotaxisPriorityMove()
 {
     if (m_cellState == Global::CellState::DangerEvade)
     {
@@ -291,6 +292,8 @@ void Cell::CalcEcoNicheCompete(double overlapRatio)
         m_deathRate *= 1.50;
     else if (overlapRatio > 50.0)
         m_deathRate *= 1.20;
+    // 二次锁死上限
+    m_deathRate = qMin(m_deathRate, 0.25);
 }
 
 // ===================== 核心业务逻辑 =====================
@@ -403,6 +406,7 @@ void Cell::CalcEnvironmentAdapt()
     double miss = 100.0 - m_allRoundness;
     m_metabEff = Global::CalcMetabolismEff(100.0, miss);
     m_deathRate = Global::CalcDeathRate(1.0, miss);
+    m_deathRate = qMin(m_deathRate, 0.2); // 死亡率最高20%，不会秒死
 }
 
 void Cell::MoveToHighNutrition(double nutrition){

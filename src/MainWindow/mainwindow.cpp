@@ -6,10 +6,17 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_globalFrameCount(0)
+    ,m_title("未知")
+    ,m_fps(60)
+    ,m_size(960,640)
 {
     ui->setupUi(this);
-    this->setWindowTitle("进化亿重奏：细胞纪元 V5.0");
-    this->resize(1280, 720);
+    Global::GameSetting newGameSet=ConfigParser::GetInstance()->GetGameSetting();
+    m_title=newGameSet.title;
+    m_size=newGameSet.windowSize[0];
+    m_fps=newGameSet.fps;
+    this->setWindowTitle(m_title);
+    this->resize(m_size);
     LOG_INFO(MODULE_NAME, "主窗口创建完成，窗口尺寸 1280x720");
 
     // 1. 初始化渲染器，绑定窗口可视区域
@@ -29,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::OnGameOver);
     // 6. 启动60FPS全局定时器（16ms一帧）
     m_frameTimer = new QTimer(this);
-    m_frameTimer->setInterval(16);
+    m_frameTimer->setInterval(1000/m_fps);
     connect(m_frameTimer, &QTimer::timeout, this, &MainWindow::OnGlobalFrameUpdate);
     m_frameTimer->start();
     LOG_INFO(MODULE_NAME, "60FPS全局帧循环定时器启动成功");
@@ -58,8 +65,9 @@ void MainWindow::OnGlobalFrameUpdate()
     // 第一步：全局生态更新
     EcologyCore::GetInstance()->EcologyUpdate(m_globalFrameCount);
 
-    // 第二步：批量更新所有细胞AI
+    // 第二步：批量更新所有细胞AI，并删除死亡的细胞
     int totalCell = m_cellList.size();
+    QVector<Cell*> deleteList;
     for (Cell* cell : m_cellList)
     {
         if (cell == nullptr) continue;
@@ -74,12 +82,21 @@ void MainWindow::OnGlobalFrameUpdate()
         // 一级判定：单个细胞死亡，发布对局结束事件
         if (cell->CheckCellDeath())
         {
-           /*
+            deleteList.push_back(cell);
             QVariantList params;
             params << (int)Global::GameOverLevel::CellDeath;
-            EventBus::GetInstance()->PublishEvent("EVT_GAME_OVER", params);*/
+            //EventBus::GetInstance()->PublishEvent("EVT_GAME_OVER", params);
         }
     }
+/*
+    if(!deleteList.empty()){
+        for(Cell* deleteCell:deleteList){
+            m_cellList.removeOne(deleteCell);
+            delete deleteCell;
+        }
+        deleteList.clear();
+    }*/
+
 
     // 第三步：驱动所有动态插件帧更新
     PluginManager::GetInstance()->UpdateAllPlugins(m_globalFrameCount);
@@ -95,6 +112,7 @@ void MainWindow::OnGameOver(Global::GameOverLevel level)
     {
     case Global::GameOverLevel::CellDeath:
         overText = "单个细胞死亡";
+        LOG_INFO(MODULE_NAME, QString("对局判定继续，原因：单个细胞灭亡"));
         break;
     case Global::GameOverLevel::GroupDeath:
         overText = "菌群全部消亡";

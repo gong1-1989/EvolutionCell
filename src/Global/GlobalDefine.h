@@ -6,6 +6,7 @@
 #include <QPointF>
 #include <QJsonObject>
 #include <QDateTime>
+#include <QSize>
 // 引入日志模块，全局所有模块共用日志
 #include "LogTool.h"
 
@@ -218,9 +219,10 @@ struct Sect{
  * @brief 游戏通用设置：完全映射 gemasetting.json 配置文件
  */
 struct GameSetting{
-    QJsonObject windowSize;             // 预设的窗口尺寸
+    QVector<QSize> windowSize;             // 预设的窗口尺寸
     QString title;                      // 游戏名字
     int fps;                            // 刷新频率
+    GameSetting():title("未知"),fps(60){}
 };
 
 /**
@@ -234,7 +236,7 @@ struct Gene
     QString geneType;                   // 基因类型：显性/隐性/缺陷
     QString classify;                   // 性状分类
     QString description;                // 性状效果描述
-    QJsonObject effectValue;            // 基因增益/减益数值
+    qreal effectValue;            // 基因增益/减益数值
     QString source;                     // 来源
     int keepRound;                      // 剩余存续轮数
     QVector<EvolveMainLine> mainList;   // 适配主干
@@ -251,6 +253,17 @@ struct InterSpecies{
     qreal scarcity;                     // 营养匮乏稳定性(%)
     qreal densityCoefficient;           // 种群密度影响系数
 };
+
+// 迁徙规则
+struct MigrateRule {
+    qreal nutriThresh;    // 营养匮乏阈值(%)
+    qreal dangerThresh;         // 危险避险阈值(%)
+    qreal densityThresh;   // 种群过载阈值(%)
+    int moveTimeSec;        // 跨层耗时(秒)
+    int energyAddRate;      // 能迁徙能耗增幅(%)
+    int aerobicMaxStaySec;  // 光合菌群无光层最长停留(秒)
+};
+
 
 // ===================== 三、全局固定计算公式（底层铁律，禁止修改） =====================
 /**

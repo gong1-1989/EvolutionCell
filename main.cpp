@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
     // 【1】第一步：初始化日志系统（所有模块依赖日志，必须最先执行）
     // 正式发布可传入 false 关闭DEBUG日志，提升性能
-    LogTool::InitLog(false);
+    LogTool::InitLog(true);
     LOG_INFO(MAIN_MODULE, "步骤1/6：日志系统初始化完成");
 
     // 【2】第二步：加载全部JSON配置（零硬编码前置依赖）

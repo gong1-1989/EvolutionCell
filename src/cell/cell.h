@@ -45,7 +45,7 @@ public:
      * @param layerEnv 当前细胞所在层级的环境数据（上层主窗口推送）
      */
     void AIUpdate(int frameCount, bool isActive, int groupMemberCount
-                  , double nicheOverlap, const Global::EnvFactor& layerEnv);
+                  , double nicheOverlap);
 
     /**
      * @brief 绘制细胞本体、动画、标识（V5.0视觉优化）
@@ -105,7 +105,7 @@ private:
     /**
      * @brief 5. 微生物趋化优先级法则：避险 > 觅食 > 常规移动
      */
-    void ChemotaxisPriorityMove(const Global::EnvFactor& layerEnv);
+    void ChemotaxisPriorityMove();
 
     /**
      * @brief 6. 群体感应法则：根据群落数量获得协同增益
