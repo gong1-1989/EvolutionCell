@@ -65,8 +65,9 @@ void MainWindow::OnGlobalFrameUpdate()
     // 第一步：全局生态更新
     EcologyCore::GetInstance()->EcologyUpdate(m_globalFrameCount);
 
-    // 第二步：批量更新所有细胞AI
+    // 第二步：批量更新所有细胞AI，并删除死亡的细胞
     int totalCell = m_cellList.size();
+    QVector<Cell*> deleteList;
     for (Cell* cell : m_cellList)
     {
         if (cell == nullptr) continue;
@@ -81,12 +82,21 @@ void MainWindow::OnGlobalFrameUpdate()
         // 一级判定：单个细胞死亡，发布对局结束事件
         if (cell->CheckCellDeath())
         {
-           /*
+            deleteList.push_back(cell);
             QVariantList params;
             params << (int)Global::GameOverLevel::CellDeath;
-            EventBus::GetInstance()->PublishEvent("EVT_GAME_OVER", params);*/
+            //EventBus::GetInstance()->PublishEvent("EVT_GAME_OVER", params);
         }
     }
+/*
+    if(!deleteList.empty()){
+        for(Cell* deleteCell:deleteList){
+            m_cellList.removeOne(deleteCell);
+            delete deleteCell;
+        }
+        deleteList.clear();
+    }*/
+
 
     // 第三步：驱动所有动态插件帧更新
     PluginManager::GetInstance()->UpdateAllPlugins(m_globalFrameCount);
@@ -102,6 +112,7 @@ void MainWindow::OnGameOver(Global::GameOverLevel level)
     {
     case Global::GameOverLevel::CellDeath:
         overText = "单个细胞死亡";
+        LOG_INFO(MODULE_NAME, QString("对局判定继续，原因：单个细胞灭亡"));
         break;
     case Global::GameOverLevel::GroupDeath:
         overText = "菌群全部消亡";
