@@ -8,6 +8,7 @@
 #include <QObject>
 #include "Global/GlobalDefine.h"
 #include "Global/LogTool.h"
+#include "Cell/Cell.h"
 
 /**
  * @brief 全局渲染核心 【静态内核 · 60FPS高频模块】
@@ -38,7 +39,7 @@ public:
      * @brief 全局统一绘制入口（主窗口paintEvent每帧调用）
      * @param painter 主画布绘制器
      */
-    void GlobalRender(QPainter* painter);
+    void GlobalRender(QPainter* painter, const QVector<Cell *> &cellList);
 
     /**
      * @brief 清空所有绘制对象（新轮回/场景重置调用）
@@ -48,7 +49,7 @@ public:
     // ===================== 分层注册绘制对象 =====================
     void AddBackgroundObj(const QRect& obj);
     void AddLandformObj(const QRect& obj);
-    void AddCellObj(QObject* cell);
+    //void AddCellObj(QObject* cell);//已废止，改为实时同步主列表
 
 private:
     RenderCore() = default;
@@ -58,7 +59,7 @@ private:
     QRect m_viewRect;                // 主窗口可视范围
     QVector<QRect> m_bgLayer;        // 1.背景层
     QVector<QRect> m_landLayer;       // 2.地貌层
-    QVector<QObject*> m_cellLayer;   // 4.细胞本体层（包含动画、图标）
+    //QVector<QObject*> m_cellLayer;   // 4.细胞本体层（包含动画、图标）--废止
 };
 
 #endif // RENDERCORE_H

@@ -40,6 +40,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_frameTimer, &QTimer::timeout, this, &MainWindow::OnGlobalFrameUpdate);
     m_frameTimer->start();
     LOG_INFO(MODULE_NAME, "60FPS全局帧循环定时器启动成功");
+
+    m_form=new Form(this);
+    m_form->show();
 }
 
 MainWindow::~MainWindow()
@@ -67,6 +70,9 @@ void MainWindow::OnGlobalFrameUpdate()
 
     // 第二步：批量更新所有细胞AI，并删除死亡的细胞
     int totalCell = m_cellList.size();
+    if(totalCell){
+
+    }
     QVector<Cell*> deleteList;
     for (Cell* cell : m_cellList)
     {
@@ -74,7 +80,7 @@ void MainWindow::OnGlobalFrameUpdate()
 
         // 模拟参数：群落总数、随机生态位重叠度
         int groupCount = totalCell;
-        double nicheOverlap = QRandomGenerator::global()->bounded(0, 1000)/10.0;
+        double nicheOverlap = Global::randomDouble(0.0,100.0);
         bool isActive = true;
 
         cell->AIUpdate(m_globalFrameCount, isActive, groupCount, nicheOverlap);
@@ -82,27 +88,27 @@ void MainWindow::OnGlobalFrameUpdate()
         // 一级判定：单个细胞死亡，发布对局结束事件
         if (cell->CheckCellDeath())
         {
-            deleteList.push_back(cell);
             QVariantList params;
             params << (int)Global::GameOverLevel::CellDeath;
             //EventBus::GetInstance()->PublishEvent("EVT_GAME_OVER", params);
+            deleteList.push_back(cell);
         }
     }
-/*
-    if(!deleteList.empty()){
-        for(Cell* deleteCell:deleteList){
-            m_cellList.removeOne(deleteCell);
-            delete deleteCell;
+    if(!deleteList.isEmpty()){
+        for(Cell* cell:deleteList){
+            m_cellList.removeOne(cell);
+            cell->deleteLater();
         }
         deleteList.clear();
-    }*/
-
+    }
 
     // 第三步：驱动所有动态插件帧更新
     PluginManager::GetInstance()->UpdateAllPlugins(m_globalFrameCount);
 
     // 第四步：触发窗口重绘，执行渲染流程
     this->update();
+    if(m_globalFrameCount%10==0)
+        m_form->update();
 }
 
 void MainWindow::OnGameOver(Global::GameOverLevel level)
@@ -160,7 +166,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
     QPainter painter(this);
-    RenderCore::GetInstance()->GlobalRender(&painter);
+    RenderCore::GetInstance()->GlobalRender(&painter,m_cellList);
 }
 
 void MainWindow::InitCellGroup()
@@ -180,14 +186,14 @@ void MainWindow::InitCellGroup()
         Cell* cell = new Cell(this);
         // 随机出生坐标（限制在窗口内）
         QPointF spawnPos(
-            QRandomGenerator::global()->bounded(50, 1230),
-            QRandomGenerator::global()->bounded(50, 670)
+            QRandomGenerator::global()->bounded(50, 960),
+            QRandomGenerator::global()->bounded(50, 640)
             );
         // 初始层级1，模板ID=1
         cell->InitCell(1, 1, spawnPos, inheritGenes);
 
         m_cellList.append(cell);
-        RenderCore::GetInstance()->AddCellObj(cell);
+        //RenderCore::GetInstance()->AddCellObj(cell);//已废止，容易导致不同步
     }
 
     LOG_INFO(MODULE_NAME, QString("细胞群落初始化完成，生成数量：%1").arg(cellSpawnCount));

@@ -35,6 +35,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/MainWindow/mainwindow.h src/MainWindow/mainwindow.cpp
         src/MainWindow/mainwindow.ui
         src/Global/logtool.h src/Global/logtool.cpp
+        form.h form.cpp form.ui
 
     )
 # Define target properties for Android with Qt 6 as:

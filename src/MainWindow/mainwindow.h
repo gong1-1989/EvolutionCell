@@ -16,6 +16,8 @@
 #include "Global/GlobalDefine.h"
 #include "Global/LogTool.h"
 
+#include "../form.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -75,6 +77,8 @@ private:
     QSize m_size;
     QString m_title;
     int m_fps;
+
+    Form* m_form;
 };
 
 #endif // MAINWINDOW_H

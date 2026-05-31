@@ -115,7 +115,14 @@ void Cell::AIUpdate(int frameCount, bool isActive, int groupMemberCount
     // 非活跃细胞降频至15FPS，减少运算量
     if (!isActive && (frameCount % 2 != 0))
         return;
-
+    if (frameCount%30==0){
+    // 通用规则更新
+    UpdateEnergyConsumption();
+    CalcEnvironmentAdapt();
+    CheckSporeSleepState();
+    UpdateInterSpeciesRelation();
+    UpdateGroupSense(groupMemberCount);
+    CalcEcoNicheCompete(nicheOverlap);
     // AI行为树：严格按优先级顺序执行
     AI_DangerDetect();
     AI_EnergyWarning();
@@ -125,14 +132,8 @@ void Cell::AIUpdate(int frameCount, bool isActive, int groupMemberCount
     AI_EvolveLogic();
     AI_GroupLogic();
     AI_BaseAction();
-
-    // 通用规则更新
-    UpdateEnergyConsumption();
-    CalcEnvironmentAdapt();
-    CheckSporeSleepState();
-    UpdateInterSpeciesRelation();
-    UpdateGroupSense(groupMemberCount);
-    CalcEcoNicheCompete(nicheOverlap);
+    }
+    ChemotaxisPriorityMove();
 }
 
 // ===================== 八大生物铁律 实现 =====================
@@ -223,7 +224,7 @@ void Cell::UpdateInterSpeciesRelation()
 
     auto ecoArr = ConfigParser::GetInstance()->GetEcoLayerConfig();
     double nutri = ecoArr.at(m_currentLayer - 1).toObject()["平均营养浓度"].toDouble();
-    double density = QRandomGenerator::global()->bounded(0, 1000)/10.0;
+    double density = Global::randomDouble(0.0,100.0);
 
     if (nutri > 60.0)
         m_curRel = Global::InterSpeciesRel::Mutualism;
@@ -274,10 +275,8 @@ void Cell::UpdateGroupSense(int groupCount)
 
 // 7. 能量守恒法则
 void Cell::UpdateEnergyConsumption()
-{
-    //【修复】每秒能耗👉转换成60FPS每帧能耗
-    const double FRAME_RATE=60.0;
-    double cost = m_baseProp.energyPerSec/FRAME_RATE;
+{    
+    double cost = m_baseProp.energyPerSec;
     // 孢子休眠能耗减免90%
     if (m_cellState == Global::CellState::SporeSleep)
         cost *= 0.1;
@@ -400,7 +399,7 @@ void Cell::OperateBioFilm()
 {
     auto groupCfg = ConfigParser::GetInstance()->GetGroupBioFilmConfig();
     double breakThresh = groupCfg["解体危险阈值(%)"].toDouble(75.0);
-    double danger = QRandomGenerator::global()->bounded(0, 1000)/10.0;
+    double danger = Global::randomDouble(0.0,100.0);
 
     if (danger >= breakThresh)
     {
@@ -419,7 +418,6 @@ void Cell::CalcEnvironmentAdapt()
     double miss = 100.0 - m_allRoundness;
     m_metabEff = Global::CalcMetabolismEff(100.0, miss);
     m_deathRate = Global::CalcDeathRate(1.0, miss);
-    m_deathRate = qMin(m_deathRate, 0.2); // 死亡率最高20%，不会秒死
 }
 
 void Cell::MoveToHighNutrition(double nutrition){
@@ -430,7 +428,7 @@ void Cell::MoveToHighNutrition(double nutrition){
 void Cell::AI_DangerDetect()
 {
     auto ecoArr = ConfigParser::GetInstance()->GetEcoLayerConfig();
-    double danger = ecoArr.at(m_currentLayer - 1).toObject()["综合危险度"].toDouble();
+    double danger = ecoArr.at(m_currentLayer - 1).toObject()["综合危险度"].toDouble(0.0);
     if (danger > 80.0 && m_cellState != Global::CellState::DangerEvade)
         m_cellState = Global::CellState::DangerEvade;
     else if (danger <= 80.0 && m_cellState == Global::CellState::DangerEvade)
@@ -496,7 +494,7 @@ void Cell::AI_GroupLogic()
 
 void Cell::AI_BaseAction()
 {
-    ChemotaxisPriorityMove();
+
     // 模拟摄食恢复能量
     if (m_curEnergy < m_baseProp.initEnergy)
         m_curEnergy += 0.01 * m_metabEff;

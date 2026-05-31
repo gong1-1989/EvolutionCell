@@ -36,6 +36,7 @@ void EcologyCore::InitEcology()
         Global::EnvFactor& env = m_layerEnvList[layerIndex];
 
         // 读取配置，字段缺失使用结构体默认值
+        env.name=obj["层级名称"].toString("未知");
         env.minTemp = obj["温度下限"].toDouble(env.minTemp);
         env.maxTemp = obj["温度上限"].toDouble(env.maxTemp);
         env.temp=Global::randomDouble(env.minTemp,env.maxTemp);
@@ -68,7 +69,7 @@ void EcologyCore::EcologyUpdate(int frameCount)
 {
     Q_UNUSED(frameCount);
 
-    // 1. 自然衰减：营养、毒素、氧气每帧?缓慢下降0.01
+    // 1. 自然衰减：营养、毒素、氧气每帧缓慢下降0.01
     for (int layer = 1; layer <= 8; ++layer)
     {
         Global::EnvFactor& env=m_layerEnvList[layer];
@@ -128,14 +129,14 @@ void EcologyCore::CalcLandformEffect(int layerId)
 void EcologyCore::TransmitBetweenLayer()
 {
     // 规则：物质从上层向下层传导，传导比例10%
-    const double transmitRate = 0.1/60.0;
+    const double transmitRate = 0.1;
     // 规则： 每层多消耗5%的物质
-    const double consumeRate=0.05/60.0;
+    const double consumeRate=0.05;
     // 从顶层1向底层8倒序遍历
-    for (int layer = 1; layer <=8; ++layer)
+    for (int layer = 1; layer <8; ++layer)
     {
         Global::EnvFactor& currLayer = m_layerEnvList[layer];
-        Global::EnvFactor& upLayer = m_layerEnvList[layer - 1];
+        Global::EnvFactor& upLayer = m_layerEnvList[layer + 1];
         //本层营养浓度＞本层上限 && 本层营养浓度＞下层浓度才向下传导
         if(currLayer.nutrition>currLayer.maxNutrition && currLayer.nutrition>upLayer.nutrition){
             upLayer.nutrition += currLayer.nutrition * transmitRate;
@@ -183,8 +184,8 @@ void EcologyCore::CalcInterfaceBonus()
 {
     // 第一层为气-水交界面，营养、溶氧量获得固定加成
     Global::EnvFactor& layer1 = m_layerEnvList[1];
-    layer1.nutrition *= (1.0+0.1/60.0);
-    layer1.oxygen *= (1.0+0.15/60.0);
+    layer1.nutrition *= 1.1;
+    layer1.oxygen *= 1.15;
     ClampEnvValue(layer1,1);
 }
 

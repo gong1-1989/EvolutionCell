@@ -173,7 +173,7 @@ private:
 private:
     // 基础标识
     quint64                 m_uniqueId;             // 细胞全局唯一ID
-    Global::CellBaseProp    m_baseProp;              // 细胞基础属性（JSON加载）
+    Global::CellBaseProp    m_baseProp;             // 细胞基础属性（JSON加载）
     QPointF                 m_worldPos;             // 世界坐标
     int                     m_currentLayer;         // 当前层级 1~8
     int                     m_groupId;              // 所属群落ID
@@ -192,7 +192,7 @@ private:
 
     // 种间关系 & 群体感应
     Global::InterSpeciesRel m_curRel;               // 当前种间关系
-    qint64                  m_relCdTime;             // 关系切换冷却时间戳
+    qint64                  m_relCdTime;            // 关系切换冷却时间戳
     double                  m_groupSenseRatio;      // 群体感应协同系数
 
     // 跨层迁徙
@@ -213,6 +213,7 @@ private:
 
     // 基因谱系
     QVector<Global::Gene>  m_inheritGeneList;       // 轮回继承基因
+
 };
 
 #endif // CELL_H

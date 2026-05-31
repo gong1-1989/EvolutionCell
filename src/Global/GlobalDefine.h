@@ -220,7 +220,7 @@ struct Sect{
  * @brief 游戏通用设置：完全映射 gemasetting.json 配置文件
  */
 struct GameSetting{
-    QVector<QSize> windowSize;             // 预设的窗口尺寸
+    QVector<QSize> windowSize;          // 预设的窗口尺寸
     QString title;                      // 游戏名字
     int fps;                            // 刷新频率
     GameSetting():title("未知"),fps(60){}
@@ -257,14 +257,13 @@ struct InterSpecies{
 
 // 迁徙规则
 struct MigrateRule {
-    qreal nutriThresh=20;    // 营养匮乏阈值(%)
-    qreal dangerThresh=80;         // 危险避险阈值(%)
-    qreal densityThresh=80;   // 种群过载阈值(%)
-    int moveTimeSec=8;        // 跨层耗时(秒)
-    int energyAddRate=20;      // 能迁徙能耗增幅(%)
-    int aerobicMaxStaySec=15;  // 光合菌群无光层最长停留(秒)
+    qreal nutriThresh=20;       // 营养匮乏阈值(%)
+    qreal dangerThresh=80;      // 危险避险阈值(%)
+    qreal densityThresh=80;     // 种群过载阈值(%)
+    int moveTimeSec=8;          // 跨层耗时(秒)
+    int energyAddRate=20;       // 能迁徙能耗增幅(%)
+    int aerobicMaxStaySec=15;   // 光合菌群无光层最长停留(秒)
 };
-
 
 // ===================== 三、全局固定计算公式（底层铁律，禁止修改） =====================
 /**

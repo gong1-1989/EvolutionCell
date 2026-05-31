@@ -1,5 +1,4 @@
 #include "RenderCore.h"
-#include "Cell/Cell.h"
 
 RenderCore* RenderCore::m_instance = nullptr;
 
@@ -24,7 +23,7 @@ void RenderCore::InitRender(const QRect& viewRect)
                               .arg(viewRect.width()).arg(viewRect.height()));
 }
 
-void RenderCore::GlobalRender(QPainter* painter)
+void RenderCore::GlobalRender(QPainter* painter,const QVector<Cell*>& cellList)
 {
     // 空绘制器防护
     if (painter == nullptr)
@@ -56,18 +55,10 @@ void RenderCore::GlobalRender(QPainter* painter)
     }
 
     // ========== 4. 绘制细胞层（本体+迁徙图标+孢子动画） ==========
-    for (QObject* obj : m_cellLayer)
+    for (Cell* cell : cellList)
     {
-        // 空对象防护
-        if (obj == nullptr)
-        {
-            LOG_WARN(MODULE_NAME, "细胞层存在空对象，跳过绘制");
-            continue;
-        }
-
-        // 类型转换
-        Cell* cell = qobject_cast<Cell*>(obj);
-        if (cell == nullptr)
+        // 空对象防护       
+        if (!cell)
         {
             LOG_WARN(MODULE_NAME, "对象非细胞实例，跳过绘制");
             continue;
@@ -83,7 +74,7 @@ void RenderCore::ClearRenderObjects()
 {
     m_bgLayer.clear();
     m_landLayer.clear();
-    m_cellLayer.clear();
+    //m_cellLayer.clear();
     LOG_DBG(MODULE_NAME, "所有绘制对象已清空");
 }
 
@@ -96,13 +87,13 @@ void RenderCore::AddLandformObj(const QRect& obj)
 {
     m_landLayer.append(obj);
 }
-
-void RenderCore::AddCellObj(QObject* cell)
-{
-    if (cell == nullptr)
-    {
-        LOG_WARN(MODULE_NAME, "尝试添加空细胞对象到渲染队列，已拦截");
-        return;
-    }
-    m_cellLayer.append(cell);
-}
+//====== 已废止 ======
+// void RenderCore::AddCellObj(QObject* cell)
+// {
+//     if (cell == nullptr)
+//     {
+//         LOG_WARN(MODULE_NAME, "尝试添加空细胞对象到渲染队列，已拦截");
+//         return;
+//     }
+//     m_cellLayer.append(cell);
+// }
